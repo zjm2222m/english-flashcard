@@ -8,21 +8,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid request' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  const prompt = messages.map(m => m.content).join('\n');
-
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: max_tokens }
-        })
-      }
-    );
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'google/gemma-3-4b-it:free',
+        max_tokens,
+        messages,
+      })
+    });
 
     const data = await response.json();
 
@@ -30,8 +28,8 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: data });
     }
 
-    // 转换成 Anthropic 格式，前端代码不用改
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // 转成 Anthropic 格式，前端不用改
+    const text = data.choices?.[0]?.message?.content || '';
     return res.status(200).json({
       content: [{ type: 'text', text }]
     });

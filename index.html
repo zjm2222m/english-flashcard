@@ -1893,9 +1893,39 @@ function showPlanResult(plan){
 function applyPlan(plan){
   const p={...plan,startDate:today()};
   savePlan(p);
+
+  // 根据vocabSource自动导入词库
+  const src=(plan.vocabSource||'').toUpperCase();
+  let imported=0;
+  const vocabMap={'CET4':0,'CET-4':0,'CET6':1,'CET-6':1,'雅思':2,'IELTS':2};
+  const setIdx=Object.keys(vocabMap).find(k=>src.includes(k));
+  if(setIdx!==undefined){
+    const vset=VOCAB_SETS[vocabMap[setIdx]];
+    if(vset){
+      let added=0;
+      vset.words.forEach(w=>{
+        if(!words.find(x=>x.word.toLowerCase()===w.word.toLowerCase())){
+          const id='w'+Date.now()+Math.random().toString(36).slice(2,6);
+          words.push({...w,id,group:vset.name});
+          added++;
+        }
+      });
+      if(added>0){
+        sv('fw_words',words);
+        imported=added;
+      }
+    }
+  }
+
   closePlanModal();
   renderPlanCard();
-  showToast('🎯 计划已设定！');
+  renderHome();
+
+  if(imported>0){
+    showToast('🎯 计划已设定！已自动导入 '+imported+' 个单词');
+  } else {
+    showToast('🎯 计划已设定！去单词本添加单词开始学习吧');
+  }
   addXP(20,'制定学习计划');
 }
 
@@ -1946,4 +1976,3 @@ document.addEventListener('keydown',e=>{
 
 </body>
 </html>
-

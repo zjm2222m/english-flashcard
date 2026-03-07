@@ -313,6 +313,21 @@ canvas{display:block;width:100%!important;}
 .mic-btn.listening{background:var(--red);border-color:var(--red);animation:micpulse .8s ease infinite alternate;box-shadow:0 0 0 8px rgba(255,107,107,.2);}
 .mic-btn.success{background:var(--green);border-color:var(--green);box-shadow:0 4px 20px rgba(61,220,132,.4);}
 .mic-btn.fail{background:rgba(255,107,107,.2);border-color:var(--red);}
+/* 第3关新样式 */
+.s3-word-box{text-align:center;margin:16px 0;}
+.s3-word{font-size:36px;font-weight:800;color:var(--text);font-family:var(--font2);letter-spacing:-1px;}
+.s3-phonetic{font-size:14px;color:var(--text2);margin-top:4px;}
+.s3-play-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;background:var(--grad);color:white;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font);margin:16px 0;box-shadow:0 4px 16px rgba(102,126,234,.35);transition:all .2s;}
+.s3-play-btn:active{transform:scale(.97);}
+.s3-play-btn.playing .s3-play-icon{animation:micpulse .6s ease infinite alternate;}
+.s3-hint{text-align:center;font-size:12px;color:var(--text2);margin-bottom:16px;}
+.s3-judge-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.s3-btn{padding:16px;border-radius:16px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .2s;}
+.s3-btn:active{transform:scale(.95);}
+.s3-btn-no{background:#fff0f2;color:#e0245e;}
+.s3-btn-yes{background:#f0faf5;color:#00a651;}
+[data-theme="dark"] .s3-btn-no{background:rgba(224,36,94,.15);color:#ff6b8a;}
+[data-theme="dark"] .s3-btn-yes{background:rgba(0,166,81,.15);color:#42d890;}
 @keyframes micpulse{from{transform:scale(1);}to{transform:scale(1.1);}}
 .mic-label{font-size:13px;color:var(--text2);font-weight:600;}
 .speak-result{background:var(--surface2);border-radius:12px;padding:12px 16px;margin-bottom:14px;}
@@ -362,21 +377,31 @@ canvas{display:block;width:100%!important;}
     </div>
   </div>
   <div id="planCard" class="plan-card hidden">
-    <h3>📅 当前学习计划</h3>
-    <div class="plan-info">
+    <div class="plan-top">
       <div class="plan-emoji" id="planEmoji">🎯</div>
-      <div>
+      <div class="plan-title-wrap">
         <div class="plan-title" id="planTitle">CET4备考</div>
         <div class="plan-sub" id="planSub">第1天 · 还剩29天</div>
       </div>
+      <div class="plan-overall">
+        <div class="plan-overall-num" id="planOverallPct">0%</div>
+        <div class="plan-overall-lbl">总进度</div>
+      </div>
+    </div>
+    <div class="plan-stats-row">
+      <div class="plan-stat"><div class="plan-stat-num" id="planMastered">0</div><div class="plan-stat-lbl">已掌握</div></div>
+      <div class="plan-stat"><div class="plan-stat-num" id="planRemaining">0</div><div class="plan-stat-lbl">待学习</div></div>
+      <div class="plan-stat"><div class="plan-stat-num" id="planDaysLeft">0</div><div class="plan-stat-lbl">剩余天</div></div>
+      <div class="plan-stat"><div class="plan-stat-num" id="planDailyTarget">0</div><div class="plan-stat-lbl">今日目标</div></div>
     </div>
     <div class="plan-progress">
       <div class="plan-prog-row">
-        <span id="planProgLabel">今日进度</span>
+        <span>今日进度</span>
         <span id="planProgNum">0 / 20词</span>
       </div>
       <div class="progress-bar"><div class="progress-fill" id="planProgFill" style="width:0%"></div></div>
     </div>
+    <div class="plan-eta" id="planEta"></div>
   </div>
   <button class="plan-btn" id="planEntryBtn" onclick="openPlanModal()">✨ AI制定学习计划</button>
   <div class="today-banner">
@@ -488,24 +513,23 @@ canvas{display:block;width:100%!important;}
     </div>
   </div>
 
-  <!-- 第3关：口语 -->
+  <!-- 第3关：发音练习 -->
   <div id="stage3" class="hidden">
-    <div class="stage-label">第3关 · 开口说出来</div>
+    <div class="stage-label">第3关 · 跟读发音</div>
     <div class="speak-card">
       <div class="speak-meaning" id="s3Meaning"></div>
-      <div class="speak-hint">说出这个单词的英文发音</div>
-      <div class="mic-area">
-        <button class="mic-btn" id="s3MicBtn" onclick="toggleS3Mic()">🎤</button>
-        <div class="mic-label" id="s3MicLabel">点击开始录音</div>
+      <div class="s3-word-box">
+        <div class="s3-word" id="s3Word"></div>
+        <div class="s3-phonetic" id="s3Phonetic"></div>
       </div>
-      <div class="speak-result hidden" id="s3Result">
-        <div class="speak-heard">听到：<span id="s3Heard"></span></div>
-        <div class="speak-feedback" id="s3Feedback"></div>
-      </div>
-      <div class="speak-answer hidden" id="s3Answer"></div>
-      <div class="speak-actions">
-        <button class="act-btn btn-ghost" onclick="s3Reveal()">👁 显示答案</button>
-        <button class="act-btn btn-primary hidden" id="s3NextBtn" onclick="nextQuest()">下一个 →</button>
+      <button class="s3-play-btn" id="s3PlayBtn" onclick="s3PlayWord()">
+        <span class="s3-play-icon">🔊</span>
+        <span>点击听发音</span>
+      </button>
+      <div class="s3-hint">跟着读一遍，然后自我评分</div>
+      <div class="s3-judge-row">
+        <button class="s3-btn s3-btn-no" onclick="s3Judge(false)">😕 没读准</button>
+        <button class="s3-btn s3-btn-yes" onclick="s3Judge(true)">✅ 读准了</button>
       </div>
     </div>
   </div>
@@ -909,6 +933,7 @@ function showStage(n){
     document.getElementById('stage1Before').classList.remove('hidden');
     qFlipped=false;
   } else if(n===2){
+    document.getElementById('qWord').textContent='???';
     document.getElementById('stage2').classList.remove('hidden');
     document.getElementById('s2Meaning').textContent=w.meaning;
     document.getElementById('s2Hint').textContent='';
@@ -921,19 +946,13 @@ function showStage(n){
     setTimeout(()=>document.getElementById('s2Input').focus(),100);
   } else if(n===3){
     document.getElementById('qWord').textContent='???';
-    if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
-      // 没有语音识别就跳过第3关直接完成
-      wordClear();return;
-    }
     document.getElementById('stage3').classList.remove('hidden');
     document.getElementById('s3Meaning').textContent=w.meaning;
-    document.getElementById('s3Result').classList.add('hidden');
-    document.getElementById('s3Answer').classList.add('hidden');
-    document.getElementById('s3NextBtn').classList.add('hidden');
-    document.getElementById('s3MicBtn').className='mic-btn';
-    document.getElementById('s3MicBtn').textContent='🎤';
-    document.getElementById('s3MicLabel').textContent='点击开始录音';
-    qS3Listening=false;
+    document.getElementById('s3Word').textContent=w.word;
+    document.getElementById('s3Phonetic').textContent=w.phonetic||'';
+    document.getElementById('s3PlayBtn').classList.remove('playing');
+    // 自动播放一次
+    setTimeout(()=>speakWord(w.word),300);
   }
 }
 
@@ -984,53 +1003,26 @@ function checkStage2(){
   }
 }
 
-// 第3关
-function toggleS3Mic(){if(qS3Listening)stopS3Mic();else startS3Mic();}
-function startS3Mic(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  qRecog=new SR();qRecog.lang='en-US';qRecog.interimResults=false;qRecog.maxAlternatives=3;
-  qRecog.onstart=()=>{
-    qS3Listening=true;
-    document.getElementById('s3MicBtn').className='mic-btn listening';
-    document.getElementById('s3MicBtn').textContent='⏹';
-    document.getElementById('s3MicLabel').textContent='正在听...';
-  };
-  qRecog.onresult=(e)=>{
-    const results=Array.from(e.results[0]).map(r=>r.transcript.trim().toLowerCase());
-    const heard=results[0];
-    const correct=qDeck[qIdx].word.toLowerCase();
-    const ok=results.some(r=>r===correct||r.replace(/[^a-z]/g,'')===correct);
-    document.getElementById('s3Heard').textContent=heard||'（未识别）';
-    const fb=document.getElementById('s3Feedback');
-    document.getElementById('s3Result').classList.remove('hidden');
-    if(ok){
-      fb.textContent='✅ 发音正确！';fb.className='speak-feedback correct';
-      document.getElementById('s3MicBtn').className='mic-btn success';
-      document.getElementById('s3MicBtn').textContent='✅';
-      speakWord(qDeck[qIdx].word);
-      qSessionXp+=15;addXP(15,'口语正确');
-      setTimeout(()=>wordClear(),1000);
-    } else {
-      fb.textContent='❌ 再试试看';fb.className='speak-feedback wrong';
-      document.getElementById('s3MicBtn').className='mic-btn fail';
-      document.getElementById('s3MicBtn').textContent='🔄';
-      document.getElementById('s3MicLabel').textContent='点击重试';
-      document.getElementById('s3NextBtn').classList.remove('hidden');
-    }
-  };
-  qRecog.onerror=()=>{stopS3Mic();document.getElementById('s3MicLabel').textContent='未听到，再试一次';};
-  qRecog.onend=()=>{qS3Listening=false;document.getElementById('s3MicBtn').textContent=document.getElementById('s3MicBtn').className.includes('listening')?'🎤':document.getElementById('s3MicBtn').textContent;};
-  qRecog.start();
-}
-function stopS3Mic(){if(qRecog){qRecog.stop();qRecog=null;}qS3Listening=false;}
-function s3Reveal(){
+// 第3关：听音跟读自判
+function s3PlayWord(){
   const w=qDeck[qIdx];
-  document.getElementById('s3Answer').innerHTML='正确答案：<span style="color:var(--accent);font-weight:700">'+esc(w.word)+'</span>';
-  document.getElementById('s3Answer').classList.remove('hidden');
-  document.getElementById('s3NextBtn').classList.remove('hidden');
-  speakWord(w.word);
+  const btn=document.getElementById('s3PlayBtn');
+  btn.classList.add('playing');
+  speakWord(w.word,()=>btn.classList.remove('playing'));
+  setTimeout(()=>btn.classList.remove('playing'),3000);
 }
-function nextQuest(){wordClear();}
+function s3Judge(correct){
+  const w=qDeck[qIdx];
+  if(correct){
+    qSessionXp+=15;addXP(15,'发音练习');
+    speakWord(w.word);
+    setTimeout(()=>wordClear(),600);
+  } else {
+    // 没读准：播放一次正确发音，然后继续
+    speakWord(w.word);
+    setTimeout(()=>wordClear(),800);
+  }
+}
 
 // 单词三关全过
 function wordClear(){
@@ -1337,38 +1329,235 @@ function showToast(msg){
 
 // ── VOCAB LIBRARY ─────────────────────
 const VOCAB_SETS=[
-  {id:'cet4',name:'CET-4 核心词',desc:'大学英语四级高频词 100个',count:100,
+  {id:'cet4',name:'CET-4 核心词',desc:'大学英语四级高频词 227个',count:227,
    words:[
     {word:'ability',meaning:'能力，才能',phonetic:'/əˈbɪlɪti/',example:'She has the ability to learn quickly. / 她有快速学习的能力。',group:'CET4'},
-    {word:'absent',meaning:'缺席的，不在的',phonetic:'/ˈæbsənt/',example:'He was absent from class today. / 他今天没来上课。',group:'CET4'},
+    {word:'absent',meaning:'缺席的',phonetic:'/ˈæbsənt/',example:'He was absent from class. / 他缺课了。',group:'CET4'},
     {word:'accept',meaning:'接受',phonetic:'/əkˈsept/',example:'Please accept my apology. / 请接受我的道歉。',group:'CET4'},
     {word:'achieve',meaning:'实现，达到',phonetic:'/əˈtʃiːv/',example:'Work hard to achieve your goals. / 努力实现你的目标。',group:'CET4'},
-    {word:'activity',meaning:'活动',phonetic:'/ækˈtɪvɪti/',example:'She enjoys outdoor activities. / 她喜欢户外活动。',group:'CET4'},
-    {word:'admire',meaning:'钦佩，羡慕',phonetic:'/ədˈmaɪər/',example:'I admire her courage. / 我钦佩她的勇气。',group:'CET4'},
-    {word:'advantage',meaning:'优势，好处',phonetic:'/ədˈvɑːntɪdʒ/',example:'Being tall is an advantage in basketball. / 在篮球中身高是一种优势。',group:'CET4'},
-    {word:'affect',meaning:'影响',phonetic:'/əˈfekt/',example:'The weather affects my mood. / 天气影响我的心情。',group:'CET4'},
+    {word:'admit',meaning:'承认，允许进入',phonetic:'/ədˈmɪt/',example:'He admitted his mistake. / 他承认了错误。',group:'CET4'},
+    {word:'advance',meaning:'前进，提前',phonetic:'/ədˈvæns/',example:'Technology continues to advance. / 技术不断进步。',group:'CET4'},
+    {word:'affect',meaning:'影响',phonetic:'/əˈfekt/',example:'Weather affects my mood. / 天气影响我的心情。',group:'CET4'},
     {word:'afford',meaning:'负担得起',phonetic:'/əˈfɔːrd/',example:'I cannot afford a new car. / 我买不起新车。',group:'CET4'},
-    {word:'ancient',meaning:'古老的',phonetic:'/ˈeɪnʃənt/',example:'China has an ancient history. / 中国有悠久的历史。',group:'CET4'},
-    {word:'announce',meaning:'宣布',phonetic:'/əˈnaʊns/',example:'The teacher announced the exam date. / 老师宣布了考试日期。',group:'CET4'},
-    {word:'anxious',meaning:'焦虑的，担心的',phonetic:'/ˈæŋkʃəs/',example:'She felt anxious before the interview. / 面试前她感到焦虑。',group:'CET4'},
-    {word:'apparent',meaning:'明显的',phonetic:'/əˈpærənt/',example:'The solution was apparent to everyone. / 解决方案对所有人都很明显。',group:'CET4'},
-    {word:'appreciate',meaning:'欣赏，感激',phonetic:'/əˈpriːʃieɪt/',example:'I appreciate your help. / 我很感激你的帮助。',group:'CET4'},
-    {word:'argue',meaning:'争论，争辩',phonetic:'/ˈɑːrɡjuː/',example:'They often argue about politics. / 他们经常争论政治。',group:'CET4'},
-    {word:'arise',meaning:'出现，发生',phonetic:'/əˈraɪz/',example:'Problems may arise unexpectedly. / 问题可能突然出现。',group:'CET4'},
-    {word:'arrange',meaning:'安排，整理',phonetic:'/əˈreɪndʒ/',example:'Please arrange the meeting for Monday. / 请把会议安排在周一。',group:'CET4'},
-    {word:'assist',meaning:'帮助，协助',phonetic:'/əˈsɪst/',example:'Can you assist me with this task? / 你能帮我完成这个任务吗？',group:'CET4'},
-    {word:'assume',meaning:'假设，承担',phonetic:'/əˈsuːm/',example:'I assume you have read the report. / 我假设你已经读过报告了。',group:'CET4'},
-    {word:'attitude',meaning:'态度',phonetic:'/ˈætɪtjuːd/',example:'A positive attitude leads to success. / 积极的态度带来成功。',group:'CET4'},
-    {word:'attract',meaning:'吸引',phonetic:'/əˈtrækt/',example:'The park attracts many visitors. / 公园吸引了很多游客。',group:'CET4'},
-    {word:'avoid',meaning:'避免',phonetic:'/əˈvɔɪd/',example:'Try to avoid eating junk food. / 尽量避免吃垃圾食品。',group:'CET4'},
-    {word:'aware',meaning:'意识到的',phonetic:'/əˈwer/',example:'Are you aware of the problem? / 你意识到这个问题了吗？',group:'CET4'},
-    {word:'balance',meaning:'平衡',phonetic:'/ˈbæləns/',example:'We need a balance between work and life. / 我们需要工作与生活的平衡。',group:'CET4'},
-    {word:'behave',meaning:'表现，举止',phonetic:'/bɪˈheɪv/',example:'Please behave yourself. / 请规矩一点。',group:'CET4'},
-    {word:'benefit',meaning:'好处，利益',phonetic:'/ˈbenɪfɪt/',example:'Exercise has many health benefits. / 锻炼有很多健康好处。',group:'CET4'},
-    {word:'burden',meaning:'负担，重担',phonetic:'/ˈbɜːrdən/',example:'This task is a heavy burden. / 这项任务是沉重的负担。',group:'CET4'},
-    {word:'capable',meaning:'有能力的',phonetic:'/ˈkeɪpəbl/',example:'She is capable of doing the job. / 她有能力完成这项工作。',group:'CET4'},
-    {word:'career',meaning:'职业，生涯',phonetic:'/kəˈrɪər/',example:'He has a successful career in medicine. / 他在医学领域有成功的职业生涯。',group:'CET4'},
-    {word:'celebrate',meaning:'庆祝',phonetic:'/ˈselɪbreɪt/',example:'We celebrated her birthday. / 我们庆祝了她的生日。',group:'CET4'},
+    {word:'agree',meaning:'同意',phonetic:'/əˈɡriː/',example:'I agree with your opinion. / 我同意你的观点。',group:'CET4'},
+    {word:'allow',meaning:'允许',phonetic:'/əˈlaʊ/',example:'Please allow me to help. / 请允许我帮忙。',group:'CET4'},
+    {word:'amount',meaning:'数量，总计',phonetic:'/əˈmaʊnt/',example:'A large amount of money. / 大量的钱。',group:'CET4'},
+    {word:'angry',meaning:'愤怒的',phonetic:'/ˈæŋɡri/',example:'He was angry about the result. / 他对结果很生气。',group:'CET4'},
+    {word:'announce',meaning:'宣布',phonetic:'/əˈnaʊns/',example:'The teacher announced the exam. / 老师宣布了考试。',group:'CET4'},
+    {word:'anxious',meaning:'焦虑的',phonetic:'/ˈæŋkʃəs/',example:'She felt anxious before the interview. / 面试前她很焦虑。',group:'CET4'},
+    {word:'apply',meaning:'申请，应用',phonetic:'/əˈplaɪ/',example:'I will apply for this job. / 我要申请这份工作。',group:'CET4'},
+    {word:'appreciate',meaning:'感激，欣赏',phonetic:'/əˈpriːʃieɪt/',example:'I appreciate your help. / 我感激你的帮助。',group:'CET4'},
+    {word:'approach',meaning:'接近，方法',phonetic:'/əˈprəʊtʃ/',example:'Try a new approach. / 尝试新方法。',group:'CET4'},
+    {word:'argue',meaning:'争论',phonetic:'/ˈɑːrɡjuː/',example:'They often argue about politics. / 他们常争论政治。',group:'CET4'},
+    {word:'arrange',meaning:'安排',phonetic:'/əˈreɪndʒ/',example:'Please arrange a meeting. / 请安排一次会议。',group:'CET4'},
+    {word:'attend',meaning:'参加，出席',phonetic:'/əˈtend/',example:'I will attend the conference. / 我将参加会议。',group:'CET4'},
+    {word:'behavior',meaning:'行为，举止',phonetic:'/bɪˈheɪvjər/',example:'Good behavior is important. / 良好的行为很重要。',group:'CET4'},
+    {word:'benefit',meaning:'好处，受益',phonetic:'/ˈbenɪfɪt/',example:'Exercise has many benefits. / 锻炼有很多好处。',group:'CET4'},
+    {word:'break',meaning:'打破，休息',phonetic:'/breɪk/',example:'Take a short break. / 休息一下。',group:'CET4'},
+    {word:'broad',meaning:'宽阔的',phonetic:'/brɔːd/',example:'A broad smile on her face. / 她脸上露出灿烂的笑容。',group:'CET4'},
+    {word:'budget',meaning:'预算',phonetic:'/ˈbʌdʒɪt/',example:'We need to cut the budget. / 我们需要削减预算。',group:'CET4'},
+    {word:'busy',meaning:'忙碌的',phonetic:'/ˈbɪzi/',example:'I am very busy today. / 我今天很忙。',group:'CET4'},
+    {word:'calm',meaning:'平静的',phonetic:'/kɑːm/',example:'Stay calm in an emergency. / 紧急情况下保持冷静。',group:'CET4'},
+    {word:'capable',meaning:'有能力的',phonetic:'/ˈkeɪpəbl/',example:'She is capable of doing it. / 她有能力做到。',group:'CET4'},
+    {word:'capture',meaning:'捕获，捕捉',phonetic:'/ˈkæptʃər/',example:'The photo captured the moment. / 照片捕捉了那一刻。',group:'CET4'},
+    {word:'career',meaning:'职业，生涯',phonetic:'/kəˈrɪər/',example:'She has a successful career. / 她有成功的职业生涯。',group:'CET4'},
+    {word:'cause',meaning:'原因，导致',phonetic:'/kɔːz/',example:'What caused the accident? / 什么导致了事故？',group:'CET4'},
+    {word:'challenge',meaning:'挑战',phonetic:'/ˈtʃælɪndʒ/',example:'Face every challenge bravely. / 勇敢面对每个挑战。',group:'CET4'},
+    {word:'change',meaning:'改变',phonetic:'/tʃeɪndʒ/',example:'Change is necessary for growth. / 成长需要改变。',group:'CET4'},
+    {word:'character',meaning:'性格，角色',phonetic:'/ˈkærəktər/',example:'She has a strong character. / 她性格坚强。',group:'CET4'},
+    {word:'charge',meaning:'收费，充电',phonetic:'/tʃɑːrdʒ/',example:'How much do you charge? / 你收多少费？',group:'CET4'},
+    {word:'choice',meaning:'选择',phonetic:'/tʃɔɪs/',example:'Make a wise choice. / 做出明智的选择。',group:'CET4'},
+    {word:'circumstance',meaning:'情况，环境',phonetic:'/ˈsɜːrkəmstæns/',example:'Under these circumstances. / 在这种情况下。',group:'CET4'},
+    {word:'claim',meaning:'声称，要求',phonetic:'/kleɪm/',example:'He claims to be innocent. / 他声称自己无辜。',group:'CET4'},
+    {word:'clear',meaning:'清楚的，清除',phonetic:'/klɪər/',example:'Make your point clear. / 把你的观点说清楚。',group:'CET4'},
+    {word:'collect',meaning:'收集',phonetic:'/kəˈlekt/',example:'She collects stamps. / 她收集邮票。',group:'CET4'},
+    {word:'combine',meaning:'结合',phonetic:'/kəmˈbaɪn/',example:'Combine work and study. / 将工作与学习结合。',group:'CET4'},
+    {word:'commit',meaning:'承诺，犯（罪）',phonetic:'/kəˈmɪt/',example:'Commit to your goals. / 致力于你的目标。',group:'CET4'},
+    {word:'communicate',meaning:'交流',phonetic:'/kəˈmjuːnɪkeɪt/',example:'Learn to communicate effectively. / 学会有效沟通。',group:'CET4'},
+    {word:'compare',meaning:'比较',phonetic:'/kəmˈpeər/',example:'Compare the two options. / 比较这两个选项。',group:'CET4'},
+    {word:'compete',meaning:'竞争',phonetic:'/kəmˈpiːt/',example:'We compete in the market. / 我们在市场上竞争。',group:'CET4'},
+    {word:'complete',meaning:'完成，完整的',phonetic:'/kəmˈpliːt/',example:'Complete the task on time. / 按时完成任务。',group:'CET4'},
+    {word:'complex',meaning:'复杂的',phonetic:'/ˈkɒmpleks/',example:'This is a complex problem. / 这是个复杂的问题。',group:'CET4'},
+    {word:'concentrate',meaning:'集中注意力',phonetic:'/ˈkɒnsntreɪt/',example:'Concentrate on your work. / 专注于你的工作。',group:'CET4'},
+    {word:'concern',meaning:'关心，担忧',phonetic:'/kənˈsɜːrn/',example:'I am concerned about you. / 我担心你。',group:'CET4'},
+    {word:'condition',meaning:'条件，状况',phonetic:'/kənˈdɪʃn/',example:'Working conditions are good. / 工作条件很好。',group:'CET4'},
+    {word:'confirm',meaning:'确认',phonetic:'/kənˈfɜːrm/',example:'Please confirm your booking. / 请确认你的预订。',group:'CET4'},
+    {word:'connect',meaning:'连接',phonetic:'/kəˈnekt/',example:'Connect the two ideas. / 将这两个想法联系起来。',group:'CET4'},
+    {word:'consider',meaning:'考虑',phonetic:'/kənˈsɪdər/',example:'Consider all the options. / 考虑所有选项。',group:'CET4'},
+    {word:'contain',meaning:'包含',phonetic:'/kənˈteɪn/',example:'The box contains books. / 盒子里有书。',group:'CET4'},
+    {word:'continue',meaning:'继续',phonetic:'/kənˈtɪnjuː/',example:'Continue your good work. / 继续你的好工作。',group:'CET4'},
+    {word:'contribute',meaning:'贡献',phonetic:'/kənˈtrɪbjuːt/',example:'Everyone should contribute. / 每个人都应该做贡献。',group:'CET4'},
+    {word:'control',meaning:'控制',phonetic:'/kənˈtrəʊl/',example:'Control your emotions. / 控制你的情绪。',group:'CET4'},
+    {word:'convenient',meaning:'方便的',phonetic:'/kənˈviːniənt/',example:'It is very convenient. / 这很方便。',group:'CET4'},
+    {word:'correct',meaning:'正确的，纠正',phonetic:'/kəˈrekt/',example:'Give the correct answer. / 给出正确答案。',group:'CET4'},
+    {word:'create',meaning:'创造',phonetic:'/kriˈeɪt/',example:'Create something new. / 创造新事物。',group:'CET4'},
+    {word:'culture',meaning:'文化',phonetic:'/ˈkʌltʃər/',example:'Chinese culture is rich. / 中国文化丰富。',group:'CET4'},
+    {word:'curious',meaning:'好奇的',phonetic:'/ˈkjʊəriəs/',example:'Children are naturally curious. / 孩子天生好奇。',group:'CET4'},
+    {word:'damage',meaning:'损害',phonetic:'/ˈdæmɪdʒ/',example:'The storm caused damage. / 暴风雨造成了损害。',group:'CET4'},
+    {word:'deal',meaning:'处理，交易',phonetic:'/diːl/',example:'Deal with problems calmly. / 冷静处理问题。',group:'CET4'},
+    {word:'decide',meaning:'决定',phonetic:'/dɪˈsaɪd/',example:'I decided to study harder. / 我决定更努力学习。',group:'CET4'},
+    {word:'decrease',meaning:'减少',phonetic:'/dɪˈkriːs/',example:'Costs have decreased. / 成本降低了。',group:'CET4'},
+    {word:'defend',meaning:'保护，辩护',phonetic:'/dɪˈfend/',example:'Defend your position. / 捍卫你的立场。',group:'CET4'},
+    {word:'define',meaning:'定义',phonetic:'/dɪˈfaɪn/',example:'Define the key terms. / 定义关键术语。',group:'CET4'},
+    {word:'deliver',meaning:'递送，传递',phonetic:'/dɪˈlɪvər/',example:'Deliver the package on time. / 按时送达包裹。',group:'CET4'},
+    {word:'demand',meaning:'需求，要求',phonetic:'/dɪˈmɑːnd/',example:'Demand for food is rising. / 对食物的需求在增加。',group:'CET4'},
+    {word:'depend',meaning:'依靠',phonetic:'/dɪˈpend/',example:'It depends on the weather. / 这取决于天气。',group:'CET4'},
+    {word:'describe',meaning:'描述',phonetic:'/dɪˈskraɪb/',example:'Describe what you see. / 描述你看到的。',group:'CET4'},
+    {word:'design',meaning:'设计',phonetic:'/dɪˈzaɪn/',example:'She designed the logo. / 她设计了这个标志。',group:'CET4'},
+    {word:'develop',meaning:'发展，开发',phonetic:'/dɪˈveləp/',example:'Develop good habits. / 养成好习惯。',group:'CET4'},
+    {word:'difference',meaning:'差异',phonetic:'/ˈdɪfrəns/',example:'What is the difference? / 有什么区别？',group:'CET4'},
+    {word:'difficult',meaning:'困难的',phonetic:'/ˈdɪfɪkəlt/',example:'This exam is difficult. / 这次考试很难。',group:'CET4'},
+    {word:'direct',meaning:'直接的，指导',phonetic:'/dɪˈrekt/',example:'Give direct feedback. / 给出直接反馈。',group:'CET4'},
+    {word:'discover',meaning:'发现',phonetic:'/dɪˈskʌvər/',example:'Discover new knowledge. / 发现新知识。',group:'CET4'},
+    {word:'discuss',meaning:'讨论',phonetic:'/dɪˈskʌs/',example:'Let us discuss the plan. / 我们来讨论这个计划。',group:'CET4'},
+    {word:'distance',meaning:'距离',phonetic:'/ˈdɪstəns/',example:'The distance is 10km. / 距离是10公里。',group:'CET4'},
+    {word:'divide',meaning:'分开，除',phonetic:'/dɪˈvaɪd/',example:'Divide the work equally. / 平均分配工作。',group:'CET4'},
+    {word:'doubt',meaning:'怀疑',phonetic:'/daʊt/',example:'I doubt his sincerity. / 我怀疑他的诚意。',group:'CET4'},
+    {word:'earn',meaning:'赚得，获得',phonetic:'/ɜːrn/',example:'Earn respect through work. / 通过工作赢得尊重。',group:'CET4'},
+    {word:'economy',meaning:'经济',phonetic:'/ɪˈkɒnəmi/',example:'The economy is growing. / 经济在增长。',group:'CET4'},
+    {word:'educate',meaning:'教育',phonetic:'/ˈedʒukeɪt/',example:'Educate children well. / 好好教育孩子。',group:'CET4'},
+    {word:'effect',meaning:'效果，影响',phonetic:'/ɪˈfekt/',example:'The medicine had no effect. / 药物没有效果。',group:'CET4'},
+    {word:'effort',meaning:'努力',phonetic:'/ˈefərt/',example:'Put in more effort. / 付出更多努力。',group:'CET4'},
+    {word:'encourage',meaning:'鼓励',phonetic:'/ɪnˈkʌrɪdʒ/',example:'Encourage each other. / 互相鼓励。',group:'CET4'},
+    {word:'energy',meaning:'能量，精力',phonetic:'/ˈenərdʒi/',example:'Full of energy today. / 今天精力充沛。',group:'CET4'},
+    {word:'enjoy',meaning:'享受',phonetic:'/ɪnˈdʒɔɪ/',example:'Enjoy every moment. / 享受每一刻。',group:'CET4'},
+    {word:'environment',meaning:'环境',phonetic:'/ɪnˈvaɪrənmənt/',example:'Protect our environment. / 保护我们的环境。',group:'CET4'},
+    {word:'especially',meaning:'尤其，特别',phonetic:'/ɪˈspeʃəli/',example:'I love sports, especially swimming. / 我喜欢运动，尤其是游泳。',group:'CET4'},
+    {word:'establish',meaning:'建立',phonetic:'/ɪˈstæblɪʃ/',example:'Establish good relationships. / 建立良好关系。',group:'CET4'},
+    {word:'evaluate',meaning:'评估',phonetic:'/ɪˈvæljueɪt/',example:'Evaluate your progress. / 评估你的进步。',group:'CET4'},
+    {word:'evidence',meaning:'证据',phonetic:'/ˈevɪdəns/',example:'There is clear evidence. / 有明确证据。',group:'CET4'},
+    {word:'exact',meaning:'精确的',phonetic:'/ɪɡˈzækt/',example:'Give the exact time. / 给出确切时间。',group:'CET4'},
+    {word:'example',meaning:'例子',phonetic:'/ɪɡˈzɑːmpl/',example:'Give an example please. / 请举个例子。',group:'CET4'},
+    {word:'exist',meaning:'存在',phonetic:'/ɪɡˈzɪst/',example:'Does this problem still exist? / 这个问题还存在吗？',group:'CET4'},
+    {word:'expect',meaning:'期待，预期',phonetic:'/ɪkˈspekt/',example:'I expect good results. / 我期待好结果。',group:'CET4'},
+    {word:'experience',meaning:'经验，经历',phonetic:'/ɪkˈspɪəriəns/',example:'Learn from experience. / 从经验中学习。',group:'CET4'},
+    {word:'explain',meaning:'解释',phonetic:'/ɪkˈspleɪn/',example:'Please explain the rules. / 请解释规则。',group:'CET4'},
+    {word:'express',meaning:'表达',phonetic:'/ɪkˈspres/',example:'Express your feelings. / 表达你的感受。',group:'CET4'},
+    {word:'factor',meaning:'因素',phonetic:'/ˈfæktər/',example:'Price is a key factor. / 价格是关键因素。',group:'CET4'},
+    {word:'fail',meaning:'失败',phonetic:'/feɪl/',example:'Never afraid to fail. / 永不惧怕失败。',group:'CET4'},
+    {word:'familiar',meaning:'熟悉的',phonetic:'/fəˈmɪliər/',example:'The face looks familiar. / 这张脸看起来很熟悉。',group:'CET4'},
+    {word:'feature',meaning:'特征，特色',phonetic:'/ˈfiːtʃər/',example:'Key features of the product. / 产品的主要特点。',group:'CET4'},
+    {word:'focus',meaning:'集中，焦点',phonetic:'/ˈfəʊkəs/',example:'Focus on what matters. / 专注于重要的事。',group:'CET4'},
+    {word:'force',meaning:'力量，强迫',phonetic:'/fɔːrs/',example:'Do not force others. / 不要强迫别人。',group:'CET4'},
+    {word:'form',meaning:'形式，表格',phonetic:'/fɔːrm/',example:'Fill in the form. / 填写表格。',group:'CET4'},
+    {word:'freedom',meaning:'自由',phonetic:'/ˈfriːdəm/',example:'Value your freedom. / 珍视你的自由。',group:'CET4'},
+    {word:'function',meaning:'功能，运作',phonetic:'/ˈfʌŋkʃn/',example:'The machine functions well. / 机器运转良好。',group:'CET4'},
+    {word:'fundamental',meaning:'基本的，根本的',phonetic:'/ˌfʌndəˈmentl/',example:'A fundamental change. / 根本性的改变。',group:'CET4'},
+    {word:'generate',meaning:'产生，生成',phonetic:'/ˈdʒenəreɪt/',example:'Generate new ideas. / 产生新想法。',group:'CET4'},
+    {word:'global',meaning:'全球的',phonetic:'/ˈɡləʊbl/',example:'Global warming is serious. / 全球变暖很严重。',group:'CET4'},
+    {word:'goal',meaning:'目标',phonetic:'/ɡəʊl/',example:'Set clear goals. / 设立明确目标。',group:'CET4'},
+    {word:'growth',meaning:'增长，成长',phonetic:'/ɡrəʊθ/',example:'Personal growth takes time. / 个人成长需要时间。',group:'CET4'},
+    {word:'guide',meaning:'指导，向导',phonetic:'/ɡaɪd/',example:'Guide others with wisdom. / 用智慧引导他人。',group:'CET4'},
+    {word:'habit',meaning:'习惯',phonetic:'/ˈhæbɪt/',example:'Develop good study habits. / 养成良好的学习习惯。',group:'CET4'},
+    {word:'handle',meaning:'处理，手柄',phonetic:'/ˈhændl/',example:'Handle the situation well. / 妥善处理情况。',group:'CET4'},
+    {word:'happen',meaning:'发生',phonetic:'/ˈhæpən/',example:'What happened yesterday? / 昨天发生了什么？',group:'CET4'},
+    {word:'harm',meaning:'伤害',phonetic:'/hɑːrm/',example:'Do not harm others. / 不要伤害他人。',group:'CET4'},
+    {word:'helpful',meaning:'有帮助的',phonetic:'/ˈhelpfl/',example:'Your advice was helpful. / 你的建议很有帮助。',group:'CET4'},
+    {word:'honest',meaning:'诚实的',phonetic:'/ˈɒnɪst/',example:'Always be honest. / 要诚实。',group:'CET4'},
+    {word:'however',meaning:'然而，但是',phonetic:'/haʊˈevər/',example:'However, things changed. / 然而，事情变了。',group:'CET4'},
+    {word:'identify',meaning:'识别，确定',phonetic:'/aɪˈdentɪfaɪ/',example:'Identify the problem first. / 首先识别问题。',group:'CET4'},
+    {word:'ignore',meaning:'忽视',phonetic:'/ɪɡˈnɔːr/',example:'Do not ignore warnings. / 不要忽视警告。',group:'CET4'},
+    {word:'imagine',meaning:'想象',phonetic:'/ɪˈmædʒɪn/',example:'Imagine a better world. / 想象一个更美好的世界。',group:'CET4'},
+    {word:'impact',meaning:'影响，冲击',phonetic:'/ˈɪmpækt/',example:'The impact was significant. / 影响很显著。',group:'CET4'},
+    {word:'improve',meaning:'改善',phonetic:'/ɪmˈpruːv/',example:'Improve your English daily. / 每天提高你的英语。',group:'CET4'},
+    {word:'include',meaning:'包括',phonetic:'/ɪnˈkluːd/',example:'The price includes tax. / 价格含税。',group:'CET4'},
+    {word:'increase',meaning:'增加',phonetic:'/ɪnˈkriːs/',example:'Increase your vocabulary. / 扩大你的词汇量。',group:'CET4'},
+    {word:'indicate',meaning:'表明，指出',phonetic:'/ˈɪndɪkeɪt/',example:'Results indicate success. / 结果表明成功。',group:'CET4'},
+    {word:'individual',meaning:'个人，个体',phonetic:'/ˌɪndɪˈvɪdʒuəl/',example:'Respect each individual. / 尊重每个个体。',group:'CET4'},
+    {word:'influence',meaning:'影响',phonetic:'/ˈɪnfluəns/',example:'Good books influence us. / 好书影响我们。',group:'CET4'},
+    {word:'inform',meaning:'通知，告知',phonetic:'/ɪnˈfɔːrm/',example:'Inform me of the result. / 把结果告诉我。',group:'CET4'},
+    {word:'intelligent',meaning:'聪明的',phonetic:'/ɪnˈtelɪdʒənt/',example:'She is very intelligent. / 她非常聪明。',group:'CET4'},
+    {word:'interest',meaning:'兴趣',phonetic:'/ˈɪntrəst/',example:'Follow your interests. / 追随你的兴趣。',group:'CET4'},
+    {word:'introduce',meaning:'介绍',phonetic:'/ˌɪntrəˈdjuːs/',example:'Let me introduce myself. / 让我自我介绍。',group:'CET4'},
+    {word:'involve',meaning:'涉及，包含',phonetic:'/ɪnˈvɒlv/',example:'The project involves many people. / 该项目涉及很多人。',group:'CET4'},
+    {word:'issue',meaning:'问题，议题',phonetic:'/ˈɪʃuː/',example:'Address the key issues. / 解决关键问题。',group:'CET4'},
+    {word:'judge',meaning:'判断，法官',phonetic:'/dʒʌdʒ/',example:'Do not judge too quickly. / 不要太快下判断。',group:'CET4'},
+    {word:'knowledge',meaning:'知识',phonetic:'/ˈnɒlɪdʒ/',example:'Knowledge is power. / 知识就是力量。',group:'CET4'},
+    {word:'language',meaning:'语言',phonetic:'/ˈlæŋɡwɪdʒ/',example:'Learn a new language. / 学一门新语言。',group:'CET4'},
+    {word:'lead',meaning:'领导，导致',phonetic:'/liːd/',example:'Lead by example. / 以身作则。',group:'CET4'},
+    {word:'limit',meaning:'限制',phonetic:'/ˈlɪmɪt/',example:'Know your limits. / 了解你的极限。',group:'CET4'},
+    {word:'logical',meaning:'合乎逻辑的',phonetic:'/ˈlɒdʒɪkl/',example:'Give a logical explanation. / 给出合乎逻辑的解释。',group:'CET4'},
+    {word:'maintain',meaning:'维持，维护',phonetic:'/meɪnˈteɪn/',example:'Maintain a healthy lifestyle. / 保持健康的生活方式。',group:'CET4'},
+    {word:'manage',meaning:'管理，设法',phonetic:'/ˈmænɪdʒ/',example:'Manage your time well. / 好好管理你的时间。',group:'CET4'},
+    {word:'measure',meaning:'测量，措施',phonetic:'/ˈmeʒər/',example:'Measure your progress. / 衡量你的进步。',group:'CET4'},
+    {word:'mental',meaning:'精神的，心理的',phonetic:'/ˈmentl/',example:'Mental health is important. / 心理健康很重要。',group:'CET4'},
+    {word:'method',meaning:'方法',phonetic:'/ˈmeθəd/',example:'Find the best method. / 找到最好的方法。',group:'CET4'},
+    {word:'mission',meaning:'使命，任务',phonetic:'/ˈmɪʃn/',example:'Complete the mission. / 完成任务。',group:'CET4'},
+    {word:'mistake',meaning:'错误',phonetic:'/mɪˈsteɪk/',example:'Learn from your mistakes. / 从错误中学习。',group:'CET4'},
+    {word:'modern',meaning:'现代的',phonetic:'/ˈmɒdərn/',example:'Modern technology is amazing. / 现代技术令人惊叹。',group:'CET4'},
+    {word:'moral',meaning:'道德的',phonetic:'/ˈmɒrəl/',example:'Have strong moral values. / 有强烈的道德价值观。',group:'CET4'},
+    {word:'motivate',meaning:'激励',phonetic:'/ˈməʊtɪveɪt/',example:'Motivate yourself daily. / 每天激励自己。',group:'CET4'},
+    {word:'natural',meaning:'自然的',phonetic:'/ˈnætʃrəl/',example:'Natural resources are limited. / 自然资源有限。',group:'CET4'},
+    {word:'necessary',meaning:'必要的',phonetic:'/ˈnesəseri/',example:'Sleep is necessary. / 睡眠是必要的。',group:'CET4'},
+    {word:'negative',meaning:'负面的，消极的',phonetic:'/ˈneɡətɪv/',example:'Avoid negative thinking. / 避免消极思想。',group:'CET4'},
+    {word:'normal',meaning:'正常的',phonetic:'/ˈnɔːrml/',example:'It is completely normal. / 这完全正常。',group:'CET4'},
+    {word:'notice',meaning:'注意，通知',phonetic:'/ˈnəʊtɪs/',example:'Notice the small details. / 注意细节。',group:'CET4'},
+    {word:'object',meaning:'物体，反对',phonetic:'/ˈɒbdʒɪkt/',example:'What is that object? / 那是什么东西？',group:'CET4'},
+    {word:'obtain',meaning:'获得',phonetic:'/əbˈteɪn/',example:'Obtain the necessary skills. / 获得必要的技能。',group:'CET4'},
+    {word:'obvious',meaning:'明显的',phonetic:'/ˈɒbviəs/',example:'The answer is obvious. / 答案是显而易见的。',group:'CET4'},
+    {word:'opportunity',meaning:'机会',phonetic:'/ˌɒpəˈtjuːnɪti/',example:'Seize every opportunity. / 抓住每一个机会。',group:'CET4'},
+    {word:'organize',meaning:'组织',phonetic:'/ˈɔːrɡənaɪz/',example:'Organize your thoughts. / 整理你的思路。',group:'CET4'},
+    {word:'overcome',meaning:'克服',phonetic:'/ˌəʊvərˈkʌm/',example:'Overcome your fears. / 克服你的恐惧。',group:'CET4'},
+    {word:'participate',meaning:'参与',phonetic:'/pɑːˈtɪsɪpeɪt/',example:'Participate in class discussions. / 参与课堂讨论。',group:'CET4'},
+    {word:'patient',meaning:'耐心的，病人',phonetic:'/ˈpeɪʃnt/',example:'Be patient with yourself. / 对自己要有耐心。',group:'CET4'},
+    {word:'perform',meaning:'表演，执行',phonetic:'/pərˈfɔːrm/',example:'Perform your best. / 发挥你的最佳状态。',group:'CET4'},
+    {word:'permit',meaning:'允许',phonetic:'/pərˈmɪt/',example:'Permit me to explain. / 允许我解释。',group:'CET4'},
+    {word:'physical',meaning:'身体的，物理的',phonetic:'/ˈfɪzɪkl/',example:'Physical exercise is important. / 体育锻炼很重要。',group:'CET4'},
+    {word:'positive',meaning:'积极的，正面的',phonetic:'/ˈpɒzɪtɪv/',example:'Stay positive always. / 始终保持积极。',group:'CET4'},
+    {word:'possible',meaning:'可能的',phonetic:'/ˈpɒsɪbl/',example:'Anything is possible. / 一切皆有可能。',group:'CET4'},
+    {word:'practice',meaning:'练习，实践',phonetic:'/ˈpræktɪs/',example:'Practice makes perfect. / 熟能生巧。',group:'CET4'},
+    {word:'prepare',meaning:'准备',phonetic:'/prɪˈpeər/',example:'Prepare for the exam. / 为考试做准备。',group:'CET4'},
+    {word:'pressure',meaning:'压力',phonetic:'/ˈpreʃər/',example:'Handle pressure well. / 妥善处理压力。',group:'CET4'},
+    {word:'prevent',meaning:'预防，阻止',phonetic:'/prɪˈvent/',example:'Prevent mistakes from happening. / 防止错误发生。',group:'CET4'},
+    {word:'principle',meaning:'原则',phonetic:'/ˈprɪnsɪpl/',example:'Stick to your principles. / 坚持你的原则。',group:'CET4'},
+    {word:'process',meaning:'过程，处理',phonetic:'/ˈprəʊses/',example:'Trust the process. / 相信这个过程。',group:'CET4'},
+    {word:'produce',meaning:'生产，产生',phonetic:'/prəˈdjuːs/',example:'Produce quality work. / 产出高质量的工作。',group:'CET4'},
+    {word:'protect',meaning:'保护',phonetic:'/prəˈtekt/',example:'Protect the environment. / 保护环境。',group:'CET4'},
+    {word:'provide',meaning:'提供',phonetic:'/prəˈvaɪd/',example:'Provide useful information. / 提供有用信息。',group:'CET4'},
+    {word:'purpose',meaning:'目的，用途',phonetic:'/ˈpɜːrpəs/',example:'Know your purpose in life. / 了解你的人生目标。',group:'CET4'},
+    {word:'realize',meaning:'意识到，实现',phonetic:'/ˈriːəlaɪz/',example:'Realize your potential. / 实现你的潜力。',group:'CET4'},
+    {word:'reduce',meaning:'减少',phonetic:'/rɪˈdjuːs/',example:'Reduce waste every day. / 每天减少浪费。',group:'CET4'},
+    {word:'reflect',meaning:'反思，反射',phonetic:'/rɪˈflekt/',example:'Reflect on your mistakes. / 反思你的错误。',group:'CET4'},
+    {word:'refuse',meaning:'拒绝',phonetic:'/rɪˈfjuːz/',example:'Refuse to give up. / 拒绝放弃。',group:'CET4'},
+    {word:'relate',meaning:'联系，涉及',phonetic:'/rɪˈleɪt/',example:'Relate theory to practice. / 将理论与实践联系起来。',group:'CET4'},
+    {word:'release',meaning:'释放，发布',phonetic:'/rɪˈliːs/',example:'Release the tension. / 释放紧张情绪。',group:'CET4'},
+    {word:'rely',meaning:'依赖，信任',phonetic:'/rɪˈlaɪ/',example:'Rely on yourself first. / 首先依靠自己。',group:'CET4'},
+    {word:'require',meaning:'需要，要求',phonetic:'/rɪˈkwaɪər/',example:'Success requires hard work. / 成功需要努力。',group:'CET4'},
+    {word:'research',meaning:'研究',phonetic:'/rɪˈsɜːrtʃ/',example:'Conduct thorough research. / 进行深入研究。',group:'CET4'},
+    {word:'resource',meaning:'资源',phonetic:'/rɪˈsɔːrs/',example:'Use resources wisely. / 明智地使用资源。',group:'CET4'},
+    {word:'respect',meaning:'尊重',phonetic:'/rɪˈspekt/',example:'Respect everyone you meet. / 尊重你遇到的每个人。',group:'CET4'},
+    {word:'responsibility',meaning:'责任',phonetic:'/rɪˌspɒnsɪˈbɪlɪti/',example:'Take responsibility for actions. / 为行为承担责任。',group:'CET4'},
+    {word:'result',meaning:'结果',phonetic:'/rɪˈzʌlt/',example:'The result was surprising. / 结果令人惊讶。',group:'CET4'},
+    {word:'reveal',meaning:'揭示，透露',phonetic:'/rɪˈviːl/',example:'Reveal the truth. / 揭示真相。',group:'CET4'},
+    {word:'review',meaning:'复习，回顾',phonetic:'/rɪˈvjuː/',example:'Review your notes daily. / 每天复习笔记。',group:'CET4'},
+    {word:'schedule',meaning:'时间表，安排',phonetic:'/ˈʃedjuːl/',example:'Follow your schedule. / 遵循你的时间表。',group:'CET4'},
+    {word:'significant',meaning:'重要的，显著的',phonetic:'/sɪɡˈnɪfɪkənt/',example:'A significant improvement. / 显著的改进。',group:'CET4'},
+    {word:'similar',meaning:'相似的',phonetic:'/ˈsɪmɪlər/',example:'We have similar interests. / 我们有相似的兴趣。',group:'CET4'},
+    {word:'situation',meaning:'情况，形势',phonetic:'/ˌsɪtʃuˈeɪʃn/',example:'Handle the situation carefully. / 谨慎处理情况。',group:'CET4'},
+    {word:'skill',meaning:'技能',phonetic:'/skɪl/',example:'Develop useful skills. / 培养有用的技能。',group:'CET4'},
+    {word:'solve',meaning:'解决',phonetic:'/sɒlv/',example:'Solve problems creatively. / 创造性地解决问题。',group:'CET4'},
+    {word:'specific',meaning:'具体的',phonetic:'/spəˈsɪfɪk/',example:'Be specific in your goals. / 目标要具体。',group:'CET4'},
+    {word:'strategy',meaning:'策略',phonetic:'/ˈstrætədʒi/',example:'Develop a good strategy. / 制定好策略。',group:'CET4'},
+    {word:'strength',meaning:'力量，优点',phonetic:'/streŋθ/',example:'Know your strengths. / 了解你的优势。',group:'CET4'},
+    {word:'struggle',meaning:'挣扎，努力',phonetic:'/ˈstrʌɡl/',example:'Struggle for your dreams. / 为梦想而奋斗。',group:'CET4'},
+    {word:'succeed',meaning:'成功',phonetic:'/səkˈsiːd/',example:'Work hard to succeed. / 努力才能成功。',group:'CET4'},
+    {word:'suggest',meaning:'建议',phonetic:'/səˈdʒest/',example:'I suggest a new approach. / 我建议采用新方法。',group:'CET4'},
+    {word:'support',meaning:'支持',phonetic:'/səˈpɔːrt/',example:'Support each other. / 互相支持。',group:'CET4'},
+    {word:'survive',meaning:'生存，幸存',phonetic:'/sərˈvaɪv/',example:'Survive through difficulties. / 在困难中生存。',group:'CET4'},
+    {word:'tend',meaning:'倾向，照料',phonetic:'/tend/',example:'I tend to work late. / 我倾向于工作到很晚。',group:'CET4'},
+    {word:'threat',meaning:'威胁',phonetic:'/θret/',example:'Face the threat bravely. / 勇敢面对威胁。',group:'CET4'},
+    {word:'throughout',meaning:'贯穿，到处',phonetic:'/θruːˈaʊt/',example:'Work hard throughout the year. / 全年努力工作。',group:'CET4'},
+    {word:'transfer',meaning:'转移，转让',phonetic:'/trænsˈfɜːr/',example:'Transfer the files. / 传输文件。',group:'CET4'},
+    {word:'transform',meaning:'改变，转变',phonetic:'/trænsˈfɔːrm/',example:'Transform your life. / 改变你的生活。',group:'CET4'},
+    {word:'trend',meaning:'趋势',phonetic:'/trend/',example:'Follow the latest trend. / 跟随最新趋势。',group:'CET4'},
+    {word:'unique',meaning:'独特的',phonetic:'/juˈniːk/',example:'Everyone is unique. / 每个人都是独特的。',group:'CET4'},
+    {word:'update',meaning:'更新',phonetic:'/ˌʌpˈdeɪt/',example:'Update your knowledge regularly. / 定期更新你的知识。',group:'CET4'},
+    {word:'value',meaning:'价值，重视',phonetic:'/ˈvæljuː/',example:'Value your time. / 珍视你的时间。',group:'CET4'},
+    {word:'variety',meaning:'多样性',phonetic:'/vəˈraɪɪti/',example:'A variety of choices. / 各种各样的选择。',group:'CET4'},
+    {word:'vision',meaning:'视野，愿景',phonetic:'/ˈvɪʒn/',example:'Have a clear vision. / 有清晰的愿景。',group:'CET4'},
+    {word:'willing',meaning:'愿意的',phonetic:'/ˈwɪlɪŋ/',example:'Be willing to learn. / 愿意学习。',group:'CET4'},
+    {word:'wisdom',meaning:'智慧',phonetic:'/ˈwɪzdəm/',example:'Gain wisdom with age. / 随年龄增长积累智慧。',group:'CET4'},
+    {word:'worthy',meaning:'值得的',phonetic:'/ˈwɜːrði/',example:'It is worthy of praise. / 值得称赞。',group:'CET4'}
    ]
   },
   {id:'cet6',name:'CET-6 核心词',desc:'大学英语六级高频词 80个',count:80,
@@ -1790,18 +1979,51 @@ function renderPlanCard(){
   document.getElementById('planEntryBtn').textContent='✏️ 修改计划';
   document.getElementById('planEmoji').textContent=p.emoji||'🎯';
   document.getElementById('planTitle').textContent=p.title||'我的计划';
+
   const start=new Date(p.startDate);
-  const today2=new Date();
-  const dayNum=Math.floor((today2-start)/(1000*60*60*24))+1;
-  const remaining=Math.max(0,p.totalDays-dayNum+1);
-  document.getElementById('planSub').textContent='第'+dayNum+'天 · 还剩'+remaining+'天';
-  const todayLearned=hist[today()]||0;
+  const now=new Date();
+  const dayNum=Math.floor((now-start)/(1000*60*60*24))+1;
+  const daysLeft=Math.max(0,p.totalDays-dayNum+1);
+  document.getElementById('planSub').textContent='第'+dayNum+'天 · 还剩'+daysLeft+'天';
+  document.getElementById('planDaysLeft').textContent=daysLeft;
+
+  // 今日目标
   const dailyGoal=p.dailyWords||10;
+  document.getElementById('planDailyTarget').textContent=dailyGoal+'词';
+
+  // 已掌握 vs 待学习
+  const mastered=words.filter(w=>gs(w.id).repetition>=2).length;
+  const remaining=words.length-mastered;
+  document.getElementById('planMastered').textContent=mastered;
+  document.getElementById('planRemaining').textContent=remaining;
+
+  // 总进度百分比
+  const totalGoal=words.length||1;
+  const pct=Math.round(mastered/totalGoal*100);
+  document.getElementById('planOverallPct').textContent=pct+'%';
+
+  // 今日进度
+  const todayLearned=hist[today()]||0;
   document.getElementById('planProgNum').textContent=todayLearned+' / '+dailyGoal+'词';
   document.getElementById('planProgFill').style.width=Math.min(100,todayLearned/dailyGoal*100)+'%';
+
+  // 预计完成日期
+  const eta=document.getElementById('planEta');
+  if(mastered<totalGoal&&dailyGoal>0){
+    const daysNeeded=Math.ceil((totalGoal-mastered)/dailyGoal);
+    const etaDate=new Date();
+    etaDate.setDate(etaDate.getDate()+daysNeeded);
+    const etaStr=etaDate.toLocaleDateString('zh-CN',{month:'long',day:'numeric'});
+    eta.textContent='📅 按当前进度，预计 '+etaStr+' 全部掌握';
+  } else if(mastered>=totalGoal){
+    eta.textContent='🎉 所有单词已掌握！可以开始测试了';
+  } else {
+    eta.textContent='';
+  }
 }
 
 function openPlanModal(){
+  planChatHistory=[];
   document.getElementById('planModal').classList.remove('hidden');
   document.getElementById('chatInput').focus();
 }
@@ -1821,52 +2043,89 @@ function addMsg(text,role){
   div.scrollIntoView({behavior:'smooth'});
 }
 
+// 对话历史，支持多轮
+let planChatHistory=[];
+
 async function sendPlanMsg(){
   const input=document.getElementById('chatInput');
   const text=input.value.trim();
   if(!text)return;
   input.value='';
   addMsg(text,'user');
+  planChatHistory.push({role:'user',content:text});
   const btn=document.getElementById('chatSendBtn');
   btn.disabled=true;btn.textContent='⏳';
 
   const wordCount=words.length;
   const vocabInfo=VOCAB_SETS.map(v=>v.name+'('+v.words.length+'词)').join('、');
 
-  try{
-    const resp=await fetch('/api/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        max_tokens:600,
-        messages:[{role:'user',content:`你是一个英语学习规划师。用户说："${text}"
+  // 系统提示：支持多轮追问
+  const systemPrompt=`你是一个专业的英语学习规划师助手，帮用户制定个性化单词学习计划。
 
-用户当前单词本有${wordCount}个单词。可用内置词库：${vocabInfo}。
+可用词库：${vocabInfo}。用户单词本现有${wordCount}个单词。
 
-请制定一个具体的学习计划，并以JSON格式返回（只返回JSON，不要其他文字）：
+【对话策略】
+- 如果用户目标模糊，先追问1-2个关键问题（考试时间？每天能学多久？英语基础？），不要急着生成计划
+- 如果信息足够，直接生成计划
+- 追问要简短友好，一次最多问2个问题
+
+【生成计划时】必须返回如下JSON（只返回JSON，不要其他文字）：
 {
-  "reply": "给用户的友好回复（1-2句话）",
+  "reply": "对用户说的话（1-2句，鼓励性的）",
+  "needMoreInfo": false,
   "plan": {
     "title": "计划名称",
     "emoji": "一个emoji",
     "totalDays": 天数(数字),
     "dailyWords": 每天新词数量(数字),
     "dailyReview": 每天复习数量(数字),
-    "vocabSource": "词库来源，如CET4或自定义",
-    "tips": "1条简短建议"
+    "vocabSource": "必须从以下选一个：CET4、CET6、雅思、自定义",
+    "tips": "1条简短学习建议"
   }
-}`}]
-      })
+}
+
+【如果还在追问，不需要生成计划时】返回：
+{
+  "reply": "你的追问内容",
+  "needMoreInfo": true
+}`;
+
+  // 构建消息：system放在第一条user消息里（兼容OpenRouter免费模型）
+  const messages=[
+    {role:'user', content:systemPrompt+'
+
+---
+用户第一条消息：'+planChatHistory[0].content},
+    ...planChatHistory.slice(1).map((m,i)=>({
+      role: m.role==='user'?'user':'assistant',
+      content: m.content
+    }))
+  ];
+
+  try{
+    const resp=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({max_tokens:800, messages})
     });
     const data=await resp.json();
     const raw=data.content?.[0]?.text||'';
     try{
-      const clean=raw.replace(/```json|```/g,'').trim();
-      const result=JSON.parse(clean);
+      const clean=raw.replace(/```json[\s\S]*?```/g,s=>s.slice(7,-3)).replace(/```/g,'').trim();
+      // 找第一个{开头的JSON
+      const jsonStart=clean.indexOf('{');
+      const jsonEnd=clean.lastIndexOf('}');
+      const jsonStr=jsonStart>=0?clean.slice(jsonStart,jsonEnd+1):clean;
+      const result=JSON.parse(jsonStr);
       addMsg(result.reply,'ai');
-      if(result.plan)showPlanResult(result.plan);
+      planChatHistory.push({role:'assistant',content:result.reply});
+      if(!result.needMoreInfo&&result.plan){
+        showPlanResult(result.plan);
+      }
     }catch{
+      // JSON解析失败，直接显示原文
       addMsg(raw||'生成失败，请重试','ai');
+      planChatHistory.push({role:'assistant',content:raw});
     }
   }catch(e){
     addMsg('网络错误，请重试','ai');
@@ -1897,32 +2156,40 @@ function applyPlan(plan){
   // 根据vocabSource自动导入词库
   const src=(plan.vocabSource||'').toUpperCase();
   let imported=0;
-  const vocabMap={'CET4':0,'CET-4':0,'CET6':1,'CET-6':1,'雅思':2,'IELTS':2};
-  const setIdx=Object.keys(vocabMap).find(k=>src.includes(k));
-  if(setIdx!==undefined){
-    const vset=VOCAB_SETS[vocabMap[setIdx]];
+  // 扩大匹配：四级/CET4/cet-4 都能识别
+  const isCET4=/(CET4|CET-4|四级|TET4)/.test(src)||src.includes('4');
+  const isCET6=/(CET6|CET-6|六级)/.test(src)&&!isCET4;
+  const isIELTS=/(雅思|IELTS|IELTS)/.test(src);
+  const vocabIdx=isIELTS?2:isCET6?1:isCET4?0:-1;
+  const matchKey=vocabIdx>=0?'match':undefined;
+  const vocabMap={match:vocabIdx};
+  if(matchKey!==undefined){
+    const vset=VOCAB_SETS[vocabIdx];
     if(vset){
-      let added=0;
-      vset.words.forEach(w=>{
-        if(!words.find(x=>x.word.toLowerCase()===w.word.toLowerCase())){
-          const id='w'+Date.now()+Math.random().toString(36).slice(2,6);
-          words.push({...w,id,group:vset.name});
-          added++;
-        }
-      });
-      if(added>0){
-        sv('fw_words',words);
-        imported=added;
-      }
+      // 清空默认单词，只保留用户自己添加的（非默认组的）
+      const userWords=words.filter(w=>w.group!=='默认');
+      const newWords=vset.words.map(w=>({
+        ...w,
+        id:'w'+Date.now()+Math.random().toString(36).slice(2,6),
+        group:vset.name
+      })).filter(w=>!userWords.find(x=>x.word.toLowerCase()===w.word.toLowerCase()));
+      words.length=0;
+      userWords.forEach(w=>words.push(w));
+      newWords.forEach(w=>words.push(w));
+      sv('fw_words',words);
+      imported=newWords.length;
     }
   }
 
   closePlanModal();
   renderPlanCard();
   renderHome();
+  // 用新词库重启学习
+  const due=getDueWords();
+  startQuest(due.length?due:words);
 
   if(imported>0){
-    showToast('🎯 计划已设定！已自动导入 '+imported+' 个单词');
+    showToast('🎯 计划已设定！已导入 '+imported+' 个单词，默认词已替换');
   } else {
     showToast('🎯 计划已设定！去单词本添加单词开始学习吧');
   }

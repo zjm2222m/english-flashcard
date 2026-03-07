@@ -1,29 +1,28 @@
 export default async function handler(req, res) {
-  // 只允许 POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 防止滥用：限制请求体大小
-  const { messages, max_tokens = 300 } = req.body;
+  const { messages, max_tokens = 600 } = req.body;
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Invalid request' });
   }
 
+  const apiKey = process.env.GEMINI_API_KEY;
+  const prompt = messages.map(m => m.content).join('\n');
+
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY, // 从环境变量读取，不暴露给前端
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', // 用最便宜的模型，例句生成够用
-        max_tokens,
-        messages,
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: max_tokens }
+        })
+      }
+    );
 
     const data = await response.json();
 
@@ -31,7 +30,12 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: data });
     }
 
-    return res.status(200).json(data);
+    // 转换成 Anthropic 格式，前端代码不用改
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return res.status(200).json({
+      content: [{ type: 'text', text }]
+    });
+
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });
   }

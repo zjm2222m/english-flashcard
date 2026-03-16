@@ -3710,6 +3710,37 @@ let aiHistory = [];  // 本次会话，刷新清空
 let aiIsOpen  = false;
 let aiLoading = false;
 
+// ── OpenRouter API 配置 ──
+const OR_KEY   = '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';
+const OR_URL   = 'https://openrouter.ai/api/v1/chat/completions';
+const OR_MODEL = 'anthropic/claude-3.5-haiku';  // 免费额度充足，速度快
+
+async function orFetch(system, messages, maxTokens=2000) {
+  const resp = await fetch(OR_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + OR_KEY,
+      'HTTP-Referer': location.href,
+      'X-Title': '单词卡片'
+    },
+    body: JSON.stringify({
+      model: OR_MODEL,
+      max_tokens: maxTokens,
+      messages: [
+        { role: 'system', content: system },
+        ...messages
+      ]
+    })
+  });
+  const data = await resp.json();
+  console.log('[OpenRouter响应]', JSON.stringify(data).slice(0, 300));
+  if(!resp.ok) throw new Error(`HTTP ${resp.status}: ${data.error?.message || JSON.stringify(data)}`);
+  const text = data.choices?.[0]?.message?.content || '';
+  if(!text) throw new Error(data.error?.message || '响应为空: ' + JSON.stringify(data));
+  return text;
+}
+
 const AI_SYSTEM = `你是一个专业的英语单词学习助手，帮助中国用户学英语。
 
 你的能力：
@@ -3788,18 +3819,11 @@ async function doGen() {
 <<<END>>>`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        system: '你是英语单词学习助手。只输出要求的JSON格式，不添加任何额外说明。',
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await resp.json();
-    const raw = data.content?.[0]?.text || '';
+    const raw = await orFetch(
+      '你是英语单词学习助手。只输出要求的JSON格式，不添加任何额外说明。',
+      [{ role: 'user', content: prompt }],
+      4000
+    );
     const m = raw.match(/<<<WORDS>>>([\s\S]*?)<<<END>>>/);
     if (!m) throw new Error('格式解析失败');
     const list = JSON.parse(m[1].trim());
@@ -4143,20 +4167,7 @@ async function aiSend(prefill) {
   showTyping();
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        system: AI_SYSTEM,
-        messages: aiHistory
-      })
-    });
-
-    const data = await resp.json();
-    const raw = data.content?.[0]?.text || '';
-    if(!raw) throw new Error(data.error?.message || '无回复');
+    const raw = await orFetch(AI_SYSTEM, aiHistory, 2000);
 
     const wordList  = parseWords(raw);
     const cleanText = stripWordsBlock(raw);

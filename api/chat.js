@@ -3,9 +3,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages, max_tokens = 600 } = req.body;
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Invalid request' });
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'API key not configured' });
   }
 
   try {
@@ -13,28 +21,16 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': 'Bearer ' + apiKey,
+        'HTTP-Referer': 'https://english-flashcard-ten.vercel.app',
+        'X-Title': 'Word-Flashcard'
       },
-      body: JSON.stringify({
-        model: 'google/gemma-3-4b-it:free',
-        max_tokens,
-        messages,
-      })
+      body: JSON.stringify(req.body)
     });
 
     const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data });
-    }
-
-    // 转成 Anthropic 格式，前端不用改
-    const text = data.choices?.[0]?.message?.content || '';
-    return res.status(200).json({
-      content: [{ type: 'text', text }]
-    });
-
+    return res.status(response.status).json(data);
   } catch (err) {
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: err.message });
   }
 }

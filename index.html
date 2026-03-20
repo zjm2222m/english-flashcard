@@ -3824,12 +3824,12 @@ let   _curSrc     = null;
 // StreamElements TTS（免费无需Key，音质自然）
 // Brian=英式男声，Amy=英式女声，en-US-JennyNeural=美式女声
 const VOICES = {
-  brian: { label:'Brian', flag:'🇬🇧', se:'Brian',  edge:null },
-  amy:   { label:'Amy',   flag:'🇬🇧', se:'Amy',    edge:null },
-  jenny: { label:'Jenny', flag:'🇺🇸', se:null,     edge:'en-US-JennyNeural' },
-  guy:   { label:'Guy',   flag:'🇺🇸', se:null,     edge:'en-US-GuyNeural' },
-  aria:  { label:'Aria',  flag:'🇺🇸', se:null,     edge:'en-US-AriaNeural' },
-  ryan:  { label:'Ryan',  flag:'🇬🇧', se:null,     edge:'en-GB-RyanNeural' },
+  brian: { label:'Brian', flag:'🇬🇧', se:'Brian'  },
+  amy:   { label:'Amy',   flag:'🇬🇧', se:'Amy'    },
+  ryan:  { label:'Ryan',  flag:'🇬🇧', se:'Brian'  }, // SE 没有 Ryan，用 Brian 代替
+  jenny: { label:'Jenny', flag:'🇺🇸', se:'Kimberly'},// SE 最接近美式女声
+  guy:   { label:'Guy',   flag:'🇺🇸', se:'Matthew'},// SE 美式男声
+  aria:  { label:'Aria',  flag:'🇺🇸', se:'Joanna' },// SE 美式女声
 };
 let _curVoice = ld('fw_voice', 'brian');
 
@@ -3883,8 +3883,7 @@ async function _prefetchAudio(text) {
   try {
     const v = VOICES[_curVoice] || VOICES.brian;
     let fetchUrl = null;
-    if(v.se)        fetchUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${v.se}&text=${encodeURIComponent(text)}`;
-    else if(v.edge) fetchUrl = `https://edge-tts-api.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=${v.edge}`;
+    if(v.se) fetchUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${v.se}&text=${encodeURIComponent(text)}`;
     if(fetchUrl) {
       const r1 = await fetch(fetchUrl);
       if(r1.ok) {
@@ -3898,15 +3897,15 @@ async function _prefetchAudio(text) {
     }
   } catch(e) {}
 
-  // Edge TTS Jenny（备用）
+  // StreamElements 备用音色（Amy）
   try {
-    const edgeUrl = `https://edge-tts-api.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=en-US-JennyNeural`;
-    const r2 = await fetch(edgeUrl);
+    const fallbackUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Amy&text=${encodeURIComponent(text)}`;
+    const r2 = await fetch(fallbackUrl);
     if(r2.ok) {
       const ab2 = await r2.arrayBuffer();
       if(ab2.byteLength > 100) {
         _audioCache[text] = await ctx.decodeAudioData(ab2.slice(0));
-        _urlCache[text] = edgeUrl;
+        _urlCache[text] = fallbackUrl;
         return;
       }
     }

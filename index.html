@@ -870,7 +870,16 @@ input {
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-/* ── 引导页 ── */
+/* ── 音色选择器 ── */
+.voice-chip {
+  flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  background: var(--surface2); color: var(--text2);
+  border: 1.5px solid var(--border2); white-space: nowrap;
+  transition: all .15s; -webkit-tap-highlight-color: transparent;
+}
+.voice-chip.active { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 3px 0 rgba(108,99,255,.2); }
+.voice-chip:active { transform: scale(.96); }
 .onboard-overlay {
   position: fixed; inset: 0; z-index: 9000;
   background: var(--bg);
@@ -1475,7 +1484,21 @@ input {
                 <button class="s1-speak-btn" onclick="event.stopPropagation();speakWordText($('s1Word').textContent)" title="朗读">
                   🔊
                 </button>
-                <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;letter-spacing:.04em">点击朗读</div>
+                <!-- 音色选择器 -->
+                <div onclick="event.stopPropagation()" style="margin-top:10px">
+                  <select id="voiceSelect" onchange="setVoice(this.value)" style="
+                    background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.4);
+                    border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;
+                    font-family:var(--font);cursor:pointer;outline:none;
+                    -webkit-appearance:none;appearance:none;text-align:center">
+                    <option value="brian" style="color:#333">🇬🇧 Brian（英式男声）</option>
+                    <option value="amy"   style="color:#333">🇬🇧 Amy（英式女声）</option>
+                    <option value="ryan"  style="color:#333">🇬🇧 Ryan（英式男声）</option>
+                    <option value="jenny" style="color:#333">🇺🇸 Jenny（美式女声）</option>
+                    <option value="guy"   style="color:#333">🇺🇸 Guy（美式男声）</option>
+                    <option value="aria"  style="color:#333">🇺🇸 Aria（美式女声）</option>
+                  </select>
+                </div>
                 <div class="flip-hint">👆 点击翻转</div>
               </div>
               <div class="flip-face flip-back">
@@ -1512,6 +1535,22 @@ input {
 
         <!-- 关卡3：口语 -->
         <div id="stage3" class="hidden">
+          <!-- 音色选择器 -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <span style="font-size:13px;font-weight:800;color:var(--text2);white-space:nowrap">🔊 音色</span>
+            <select id="voiceSelect3" onchange="setVoice(this.value)" style="
+              flex:1;background:var(--surface2);color:var(--text);
+              border:1.5px solid var(--border2);border-radius:20px;
+              padding:8px 14px;font-size:14px;font-weight:700;
+              font-family:var(--font);cursor:pointer;outline:none;">
+              <option value="brian">🇬🇧 Brian（英式男声）</option>
+              <option value="amy">🇬🇧 Amy（英式女声）</option>
+              <option value="ryan">🇬🇧 Ryan（英式男声）</option>
+              <option value="jenny">🇺🇸 Jenny（美式女声）</option>
+              <option value="guy">🇺🇸 Guy（美式男声）</option>
+              <option value="aria">🇺🇸 Aria（美式女声）</option>
+            </select>
+          </div>
           <div class="speak-box">
             <div class="speak-word" id="s3Word"></div>
             <div class="speak-ph" id="s3Ph"></div>
@@ -3648,6 +3687,7 @@ function showStage(n) {
     $('flipCard').classList.remove('flipped');
     $('s1Before').classList.remove('hidden');
     $('s1After').classList.add('hidden');
+    initVoiceChips();
     // 预加载当前和下一个单词的音频
     _preload(w.word.toLowerCase());
     if(qDeck[qIdx+1]) _preload(qDeck[qIdx+1].word.toLowerCase());
@@ -3667,6 +3707,8 @@ function showStage(n) {
     showStudySection('stage3');
     $('s3Word').textContent = w.word;
     $('s3Ph').textContent   = w.phonetic||'';
+    // 恢复音色选择器状态
+    initVoiceChips();
     // 自动生成记忆点
     autoMemTip(w);
   }
@@ -3771,12 +3813,136 @@ function nextStage() { nextWord(); }
 // ═══════════════════════════════════════════
 // 朗读
 // ═══════════════════════════════════════════
-// ── 音频模块（纯本地 WebSpeech，零延迟）──
-let _ttsVoice = null;
-let _ttsReady = false;
-let _ttsQueue = null;
+// ── 音频模块（Edge Neural TTS + 系统TTS兜底）──
+// ═══════════════════════════════════════════
+const _audioCache = {};
+const _urlCache   = {};
+const _fetchLock  = {};
+let   _audioCtx   = null;
+let   _curSrc     = null;
 
-// 页面加载时立即挑选最佳声音并预热引擎
+// StreamElements TTS（免费无需Key，音质自然）
+// Brian=英式男声，Amy=英式女声，en-US-JennyNeural=美式女声
+const VOICES = {
+  brian: { label:'Brian', flag:'🇬🇧', se:'Brian',  edge:null },
+  amy:   { label:'Amy',   flag:'🇬🇧', se:'Amy',    edge:null },
+  jenny: { label:'Jenny', flag:'🇺🇸', se:null,     edge:'en-US-JennyNeural' },
+  guy:   { label:'Guy',   flag:'🇺🇸', se:null,     edge:'en-US-GuyNeural' },
+  aria:  { label:'Aria',  flag:'🇺🇸', se:null,     edge:'en-US-AriaNeural' },
+  ryan:  { label:'Ryan',  flag:'🇬🇧', se:null,     edge:'en-GB-RyanNeural' },
+};
+let _curVoice = ld('fw_voice', 'brian');
+
+function setVoice(id) {
+  if(_curVoice === id) return;
+  _curVoice = id;
+  sv('fw_voice', id);
+  // 同步两个下拉框
+  const s1 = document.getElementById('voiceSelect');
+  const s3 = document.getElementById('voiceSelect3');
+  if(s1) s1.value = id;
+  if(s3) s3.value = id;
+  // 清除缓存，强制用新音色重新获取
+  for(const k in _audioCache) delete _audioCache[k];
+  for(const k in _urlCache)   delete _urlCache[k];
+  for(const k in _fetchLock)  delete _fetchLock[k];
+  showToast('🔊 已切换：' + (VOICES[id]?.flag||'') + ' ' + (VOICES[id]?.label||id));
+  // 立即播放当前单词
+  const w = (typeof qDeck !== 'undefined' && qDeck.length) ? qDeck[qIdx] : null;
+  if(w) { _sysTTS(w.word); _prefetchAudio(w.word.toLowerCase()); }
+}
+
+// 初始化下拉框选中值
+function initVoiceChips() {
+  const s1 = document.getElementById('voiceSelect');
+  const s3 = document.getElementById('voiceSelect3');
+  if(s1) s1.value = _curVoice;
+  if(s3) s3.value = _curVoice;
+}
+
+
+
+function speakWordText(text) {
+  if(!text) return;
+  text = text.trim().toLowerCase();
+  if(_curSrc) { try { _curSrc.stop(); } catch(e) {} _curSrc = null; }
+  const ctx = _getCtx();
+  if(ctx && _audioCache[text]) { _playBuf(ctx, _audioCache[text]); return; }
+  if(ctx && _urlCache[text])   { _decodePlay(ctx, text, _urlCache[text]); return; }
+  _sysTTS(text);
+  _prefetchAudio(text);
+}
+
+async function _prefetchAudio(text) {
+  if(_audioCache[text] || _fetchLock[text]) return;
+  _fetchLock[text] = true;
+  const ctx = _getCtx();
+  if(!ctx) { _fetchLock[text] = false; return; }
+
+  // StreamElements TTS（主力）
+  try {
+    const v = VOICES[_curVoice] || VOICES.brian;
+    let fetchUrl = null;
+    if(v.se)        fetchUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${v.se}&text=${encodeURIComponent(text)}`;
+    else if(v.edge) fetchUrl = `https://edge-tts-api.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=${v.edge}`;
+    if(fetchUrl) {
+      const r1 = await fetch(fetchUrl);
+      if(r1.ok) {
+        const ab1 = await r1.arrayBuffer();
+        if(ab1.byteLength > 200) {
+          _audioCache[text] = await ctx.decodeAudioData(ab1.slice(0));
+          _urlCache[text] = fetchUrl;
+          return;
+        }
+      }
+    }
+  } catch(e) {}
+
+  // Edge TTS Jenny（备用）
+  try {
+    const edgeUrl = `https://edge-tts-api.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=en-US-JennyNeural`;
+    const r2 = await fetch(edgeUrl);
+    if(r2.ok) {
+      const ab2 = await r2.arrayBuffer();
+      if(ab2.byteLength > 100) {
+        _audioCache[text] = await ctx.decodeAudioData(ab2.slice(0));
+        _urlCache[text] = edgeUrl;
+        return;
+      }
+    }
+  } catch(e) {}
+
+  _fetchLock[text] = false;
+}
+function _getCtx() {
+  if(!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return _audioCtx;
+}
+
+function _playBuf(ctx, buffer) {
+  try {
+    if(ctx.state === 'suspended') ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.connect(ctx.destination);
+    src.start(0);
+    _curSrc = src;
+  } catch(e) {}
+}
+
+async function _decodePlay(ctx, text, url) {
+  try {
+    const res = await fetch(url);
+    const buf = await res.arrayBuffer();
+    const decoded = await ctx.decodeAudioData(buf);
+    _audioCache[text] = decoded;
+    _playBuf(ctx, decoded);
+  } catch(e) { _sysTTS(text); }
+}
+let _ttsVoice = null, _ttsReady = false, _ttsQueue = null;
+
 function _initTTS() {
   if(!('speechSynthesis' in window)) return;
   const pick = () => {
@@ -3785,78 +3951,27 @@ function _initTTS() {
     _ttsVoice = voices.find(v => /samantha|karen|moira/i.test(v.name) && v.lang.startsWith('en'))
              || voices.find(v => v.lang === 'en-US' && /google/i.test(v.name))
              || voices.find(v => v.lang === 'en-US')
-             || voices.find(v => v.lang.startsWith('en-GB'))
              || voices.find(v => v.lang.startsWith('en'));
     _ttsReady = true;
-    // 预热：静音播一个空字符，让引擎提前初始化
     const warm = new SpeechSynthesisUtterance(' ');
     warm.volume = 0; warm.lang = 'en-US';
     if(_ttsVoice) warm.voice = _ttsVoice;
     speechSynthesis.speak(warm);
     if(_ttsQueue) { speakWordText(_ttsQueue); _ttsQueue = null; }
+    words.slice(0, 5).forEach(w => _prefetchAudio(w.word.toLowerCase()));
   };
-  speechSynthesis.getVoices().length > 0 ? pick()
-    : (speechSynthesis.onvoiceschanged = pick);
+  speechSynthesis.getVoices().length > 0 ? pick() : (speechSynthesis.onvoiceschanged = pick);
 }
 
-function speakWordText(text) {
-  if(!text) return;
-  text = text.trim().toLowerCase();
+function _sysTTS(text) {
   if(!('speechSynthesis' in window)) return;
   if(!_ttsReady) { _ttsQueue = text; return; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US'; u.rate = 0.82; u.pitch = 1.0; u.volume = 1.0;
+  u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1.0; u.volume = 1.0;
   if(_ttsVoice) u.voice = _ttsVoice;
   speechSynthesis.speak(u);
 }
-
-// ── 记忆点 ──────────────────────────────
-const _memCache = {};  // word → html，避免重复请求
-
-async function _fetchMemTip(word, meaning) {
-  if(_memCache[word]) return _memCache[word];
-
-  const prompt = `请为英语单词"${word}"（中文意思：${meaning}）生成一个超级好记的记忆点。
-要求：
-1. 先用1句话给出词根/词缀分析（如果有的话）
-2. 再用1-2句给出有趣的联想记忆法或谐音梗
-3. 语言简洁有趣，适合中国学生，总共不超过4句话
-直接输出内容，不要加标题或序号。`;
-
-  const raw = await orFetch(
-    '你是英语记忆专家，专门帮中国学生用有趣的方式记住英语单词。回复简洁有趣，不超过4句话。',
-    [{ role: 'user', content: prompt }],
-    400
-  );
-
-  const formatted = raw.trim()
-    .replace(/\n+/g, '<br>')
-    .replace(/「(.+?)」/g, '<b style="color:var(--accent)">「$1」</b>')
-    .replace(/(词根|词缀|来自|源于|谐音)([^，。<]{1,20})/g,
-      '<b style="color:var(--accent)">$1$2</b>');
-
-  const html = `<div style="font-size:12px;color:var(--text2);font-weight:800;margin-bottom:6px;letter-spacing:.04em">💡 记忆点</div><div style="font-size:14px;line-height:1.75">${formatted}</div>`;
-  _memCache[word] = html;
-  return html;
-}
-
-// 第三关：自动生成，显示在 s3MemContent
-async function autoMemTip(w) {
-  const el = document.getElementById('s3MemContent');
-  if(!el) return;
-  el.innerHTML = '<span style="color:var(--text3);font-size:13px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;animation:spin .8s linear infinite">⟳</span> 记忆点生成中…</span>';
-  try {
-    const html = await _fetchMemTip(w.word, w.meaning);
-    el.innerHTML = html;
-  } catch(e) {
-    console.error('[记忆点错误]', e);
-    el.innerHTML = '<span style="color:var(--text3);font-size:13px">💡 ' + (e.message||'生成失败') + '</span>';
-  }
-}
-
-// 翻卡背面按钮（已移除，保留空函数兼容）
-function loadMemTip() {}
 
 function speakWordById(id) {
   const w = words.find(w => w.id === id);
@@ -3864,1235 +3979,7 @@ function speakWordById(id) {
 }
 
 function _preload() {}
-function preloadWords() {}// ═══════════════════════════════════════════
-// 单词本
-// ═══════════════════════════════════════════
-let curGroup = '全部', searchQ = '', wPage = 0;
-const PAGE_SIZE = 40;
-
-function renderFilters() {
-  const groups = ['全部', ...new Set(words.map(w=>w.group||'默认'))];
-  $('filterTabs').innerHTML = groups.map(g =>
-    `<button class="filter-tab${g===curGroup?' active':''}" onclick="setGroup('${esc(g)}')">${esc(g)}</button>`
-  ).join('');
-}
-
-function setGroup(g) { curGroup=g; renderFilters(); renderWordList(true); }
-function onSearch()  { searchQ=$('searchInput').value; renderWordList(true); }
-
-function renderWordList(reset) {
-  if(reset) wPage=0;
-  const q = searchQ.toLowerCase();
-  let filtered = words.filter(w => {
-    if(curGroup!=='全部' && (w.group||'默认')!==curGroup) return false;
-    if(q && !w.word.toLowerCase().includes(q) && !w.meaning.includes(q)) return false;
-    return true;
-  });
-  const slice = filtered.slice(0, (wPage+1)*PAGE_SIZE);
-  $('wordList').innerHTML = slice.map(w => {
-    const d = getSm2(w.id);
-    const status = d.rep>4?'mastered':d.rep>0?'learning':'';
-    const fav = favWords.includes(w.id) ? ' active' : '';
-    return `<div class="word-item" onclick="openDetail(${w.id})">
-      <div class="word-status ${status}"></div>
-      <div class="word-item-main">
-        <div class="word-en">${esc(w.word)}</div>
-        ${w.phonetic?`<div class="word-ph">${esc(w.phonetic)}</div>`:''}
-        <div class="word-cn">${esc(w.meaning)}</div>
-      </div>
-      <button class="word-fav${fav}" onclick="event.stopPropagation();toggleFav(${w.id})">${favWords.includes(w.id)?'★':'☆'}</button>
-    </div>`;
-  }).join('');
-  const hasMore = filtered.length > (wPage+1)*PAGE_SIZE;
-  $('loadMoreBtn').classList.toggle('hidden', !hasMore);
-}
-
-function loadMore() { wPage++; renderWordList(false); }
-
-function toggleFav(id) {
-  if(favWords.includes(id)) favWords=favWords.filter(x=>x!==id);
-  else favWords.push(id);
-  saveFav(); renderWordList(false); updateDots();
-}
-
-// 添加单词
-function addWord() {
-  const word = $('inWord').value.trim();
-  const meaning = $('inMeaning').value.trim();
-  if(!word || !meaning) { showToast('请填写单词和释义'); return; }
-  if(words.some(w=>w.word.toLowerCase()===word.toLowerCase())) { showToast('单词已存在'); return; }
-  const id = Date.now();
-  words.push({id, word, meaning, phonetic:$('inPhonetic').value.trim(), example:$('inExample').value.trim(), group:'自定义'});
-  saveWords();
-  $('inWord').value=$('inMeaning').value=$('inPhonetic').value=$('inExample').value='';
-  renderWordList(true); renderFilters();
-  showToast('✅ 已添加：'+word);
-}
-
-// ═══════════════════════════════════════════
-// 词库选择
-// ═══════════════════════════════════════════
-function renderVocabList() {
-  const sections = [
-    {tag:'小学', label:'小学', icon:'🎒', color:'#34c759'},
-    {tag:'初中', label:'初中', icon:'📖', color:'#007aff'},
-    {tag:'大学', label:'大学', icon:'🎓', color:'#5e5ce6'},
-  ];
-  $('vocabList').innerHTML = sections.map(sec => {
-    const sets = VOCAB_SETS.filter(s=>s.tag===sec.tag);
-    if(!sets.length) return '';
-    return `<p class="vocab-section-title" style="color:${sec.color}">${sec.icon} ${sec.label}</p>
-    <div class="vocab-grid">
-      ${sets.map(set => {
-        const added = words.some(w=>w.group===set.name);
-        const pct   = added && set.words.length
-          ? Math.round(words.filter(w=>w.group===set.name&&getSm2(w.id).rep>=5).length/set.words.length*100)
-          : 0;
-        return `<div class="vocab-card${added?' added':''}">
-          <div class="vocab-icon">${set.icon||'📚'}</div>
-          <div class="vocab-name">${esc(set.name)}</div>
-          <div class="vocab-source">${esc(set.source||'')}</div>
-          <div class="vocab-count">${set.count}词</div>
-          ${added?`<div class="vocab-prog"><div class="vocab-prog-fill" style="width:${pct}%"></div></div>`:''}
-          <button class="vocab-add-btn" onclick="importVocab('${set.id}')" id="vbtn_${set.id}">
-            ${added?'✓ 已添加':'+ 添加'}
-          </button>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }).join('');
-}
-
-function importVocab(id) {
-  const set = VOCAB_SETS.find(s=>s.id===id);
-  if(!set) return;
-  const already = words.some(w=>w.group===set.name);
-  if(already) {
-    // 移除
-    words = words.filter(w=>w.group!==set.name);
-    saveWords(); renderWordList(true); renderFilters(); renderVocabList();
-    showToast('已移除：'+set.name);
-  } else {
-    // 添加，生成不重复id
-    const base = words.length ? Math.max(...words.map(w=>typeof w.id==='number'?w.id:0)) : 0;
-    const newWords = set.words.map((w,i) => ({...w, id:base+i+1, group:set.name}));
-    words.push(...newWords);
-    saveWords(); renderWordList(true); renderFilters(); renderVocabList();
-    showToast(`✅ 已添加 ${set.name}（${set.count}词）`);
-  }
-}
-
-// ═══════════════════════════════════════════
-// 统计页
-// ═══════════════════════════════════════════
-function renderStats() {
-  const learned  = words.filter(w=>getSm2(w.id).rep>0).length;
-  const mastered = words.filter(w=>getSm2(w.id).rep>=5).length;
-  const due      = getDueWords().length;
-  const errCnt   = Object.keys(errWords).length;
-  const favCnt   = favWords.length;
-
-  $('stHeroN').textContent   = words.length;
-  $('stsDue').textContent    = due;
-  $('stsMastered').textContent = mastered;
-  $('stsErrors').textContent = errCnt;
-  $('stsFavs').textContent   = favCnt;
-
-  // 徽章
-  $('badgesGrid').innerHTML = BADGES.map(b => `
-    <div class="badge-item${xpData.badges.includes(b.id)?' unlocked':''}">
-      <div class="badge-icon">${b.icon}</div>
-      <div class="badge-name">${b.name}</div>
-    </div>`).join('');
-
-  // 通知设置
-  const cfg = ld('fw_notif',{enabled:false,time:'09:00'});
-  $('notifToggle').checked = cfg.enabled;
-  $('notifTime').value = cfg.time||'09:00';
-  $('notifTimeRow').classList.toggle('hidden',!cfg.enabled);
-  updateNotifStatus();
-  // 学习计划设置
-  loadSettings();
-  renderCurve();
-}
-
-// ═══════════════════════════════════════════
-// 错词本
-// ═══════════════════════════════════════════
-let errTab = 'err';
-function showErrTab(tab) {
-  errTab = tab;
-  $('tabErr').classList.toggle('active', tab==='err');
-  $('tabFav').classList.toggle('active', tab==='fav');
-  $('errList').classList.toggle('hidden', tab!=='err');
-  $('favList').classList.toggle('hidden', tab!=='fav');
-  $('reviewErrBtn').classList.toggle('hidden', tab!=='err');
-  renderErrors();
-}
-
-function renderErrors() {
-  // 错词
-  const errIds = Object.entries(errWords).sort((a,b)=>b[1]-a[1]);
-  if(!errIds.length) {
-    $('errList').innerHTML = '<div class="empty">暂无错词 🎉</div>';
-  } else {
-    $('errList').innerHTML = errIds.map(([id,cnt]) => {
-      const w = words.find(w=>String(w.id)===String(id));
-      if(!w) return '';
-      return `<div class="error-item" onclick="openDetail(${w.id})">
-        <div class="error-count">${cnt}</div>
-        <div class="word-item-main">
-          <div class="word-en">${esc(w.word)}</div>
-          <div class="word-cn">${esc(w.meaning)}</div>
-        </div>
-        <button onclick="event.stopPropagation();delError(${w.id})" style="color:var(--text3);font-size:18px;padding:4px">✕</button>
-      </div>`;
-    }).join('');
-  }
-  // 收藏
-  const favList = words.filter(w=>favWords.includes(w.id));
-  if(!favList.length) {
-    $('favList').innerHTML = '<div class="empty">暂无收藏 ⭐</div>';
-  } else {
-    $('favList').innerHTML = favList.map(w =>
-      `<div class="fav-item" onclick="openDetail(${w.id})">
-        <span style="font-size:20px;color:#ff9500">★</span>
-        <div class="word-item-main">
-          <div class="word-en">${esc(w.word)}</div>
-          <div class="word-cn">${esc(w.meaning)}</div>
-        </div>
-      </div>`
-    ).join('');
-  }
-}
-
-function delError(id) {
-  delete errWords[id]; saveErr(); renderErrors(); updateDots();
-}
-
-function reviewErrors() {
-  const errIds = Object.keys(errWords);
-  const list = words.filter(w=>errIds.includes(String(w.id)));
-  if(!list.length) { showToast('没有错词可复习'); return; }
-  goPage('Study');
-  startQuest(list);
-}
-
-// ═══════════════════════════════════════════
-// 单词详情
-// ═══════════════════════════════════════════
-let dtCurrentId = null;
-function openDetail(id) {
-  const w = words.find(w=>w.id===id);
-  if(!w) return;
-  dtCurrentId = id;
-  $('dtWord').textContent = w.word;
-  $('dtPh').textContent   = w.phonetic||'';
-  $('dtMeaning').textContent = w.meaning;
-  const ex=(w.example||'').split(' / ');
-  $('dtExample').innerHTML = ex.map(e=>esc(e)).join('<br>');
-  const d = getSm2(id);
-  const err = errWords[id]||0;
-  $('dtMeta').textContent = `组别：${w.group||'默认'}  ·  复习次数：${d.rep||0}  ·  错误次数：${err}`;
-  $('dtFavBtn').textContent = favWords.includes(id)?'★':'☆';
-  $('dtFavBtn').style.color = favWords.includes(id)?'#ff9500':'';
-  $('detailOverlay').classList.remove('hidden');
-}
-function closeDetail(e) {
-  if(!e || e.target===$('detailOverlay')) $('detailOverlay').classList.add('hidden');
-}
-function dtToggleFav() {
-  if(!dtCurrentId) return;
-  toggleFav(dtCurrentId);
-  $('dtFavBtn').textContent = favWords.includes(dtCurrentId)?'★':'☆';
-  $('dtFavBtn').style.color = favWords.includes(dtCurrentId)?'#ff9500':'';
-}
-
-// ═══════════════════════════════════════════
-// 多选题
-// ═══════════════════════════════════════════
-let quizDeck=[], quizIdx=0, quizScore=0;
-function openQuiz() {
-  if(words.length < 4) { showToast('单词不足4个，无法出题'); return; }
-  quizDeck = shuffle(words).slice(0,10);
-  quizIdx=0; quizScore=0;
-  $('quizOverlay').classList.remove('hidden');
-  renderQuiz();
-}
-function renderQuiz() {
-  if(quizIdx >= quizDeck.length) {
-    const rate = quizScore/quizDeck.length;
-    $('quizBody').innerHTML = `
-      <div style="text-align:center;padding:20px 0">
-        <div style="font-size:64px;margin-bottom:16px">${rate>=0.8?'🎉':rate>=0.5?'💪':'📚'}</div>
-        <div style="font-size:24px;font-weight:700;margin-bottom:8px">测试完成！</div>
-        <div style="font-size:18px;color:var(--text2);margin-bottom:24px">${quizScore}/${quizDeck.length} 答对</div>
-        <button class="btn btn-primary btn-full" onclick="$('quizOverlay').classList.add('hidden')">完成</button>
-      </div>`;
-    $('quizProgress').textContent = '';
-    return;
-  }
-  const w = quizDeck[quizIdx];
-  const others = shuffle(words.filter(x=>x.id!==w.id)).slice(0,3);
-  const opts = shuffle([w,...others]);
-  $('quizProgress').textContent = (quizIdx+1)+'/'+quizDeck.length;
-  $('quizBody').innerHTML = `
-    <div class="quiz-word-big">${esc(w.word)}</div>
-    <div class="quiz-ph">${esc(w.phonetic||'')}</div>
-    <div class="quiz-options">
-      ${opts.map(o=>`
-        <button class="quiz-opt" onclick="answerQuiz(this,${o.id===w.id},${w.id})">
-          ${esc(o.meaning)}
-        </button>`).join('')}
-    </div>`;
-}
-function answerQuiz(btn, correct, wid) {
-  document.querySelectorAll('.quiz-opt').forEach(b=>b.style.pointerEvents='none');
-  btn.style.borderColor = correct ? 'var(--green)' : 'var(--red)';
-  btn.style.background  = correct ? 'rgba(52,199,89,.15)' : 'rgba(255,59,48,.15)';
-  if(correct) quizScore++;
-  else recordError(wid);
-  setTimeout(()=>{ quizIdx++; renderQuiz(); }, 800);
-}
-
-// ═══════════════════════════════════════════
-// 通知
-// ═══════════════════════════════════════════
-function updateNotifStatus() {
-  const el = $('notifStatus');
-  if(!el) return;
-  if(!('Notification' in window)) { el.textContent='此浏览器不支持通知'; return; }
-  const cfg = ld('fw_notif',{enabled:false,time:'09:00'});
-  if(Notification.permission==='granted') {
-    el.textContent = cfg.enabled ? '已开启，每天 '+cfg.time+' 提醒' : '已授权，点击开启';
-  } else if(Notification.permission==='denied') {
-    el.textContent = '通知已被拒绝，请在浏览器设置中允许';
-  } else {
-    el.textContent = '点击开启浏览器通知';
-  }
-}
-async function toggleNotif() {
-  const toggle = $('notifToggle');
-  if(!('Notification' in window)) { showToast('此浏览器不支持通知'); toggle.checked=false; return; }
-  if(toggle.checked) {
-    const perm = await Notification.requestPermission();
-    if(perm!=='granted') { showToast('请允许通知权限'); toggle.checked=false; return; }
-    const cfg=ld('fw_notif',{enabled:false,time:'09:00'});
-    cfg.enabled=true; sv('fw_notif',cfg);
-    $('notifTimeRow').classList.remove('hidden');
-    scheduleNotif(); showToast('🔔 每日提醒已开启！');
-  } else {
-    const cfg=ld('fw_notif',{enabled:false,time:'09:00'});
-    cfg.enabled=false; sv('fw_notif',cfg);
-    $('notifTimeRow').classList.add('hidden');
-    showToast('提醒已关闭');
-  }
-  updateNotifStatus();
-}
-function saveNotifTime() {
-  const cfg=ld('fw_notif',{enabled:false,time:'09:00'});
-  cfg.time=$('notifTime').value; sv('fw_notif',cfg);
-  scheduleNotif(); showToast('提醒时间已更新');
-}
-function scheduleNotif() {
-  const cfg=ld('fw_notif',{enabled:false,time:'09:00'});
-  if(!cfg.enabled||!('Notification' in window)||Notification.permission!=='granted') return;
-  const [h,m]=cfg.time.split(':').map(Number);
-  const now=new Date(); const next=new Date();
-  next.setHours(h,m,0,0);
-  if(next<=now) next.setDate(next.getDate()+1);
-  clearTimeout(window._notifTimer);
-  window._notifTimer=setTimeout(()=>{
-    const due=getDueWords().length;
-    new Notification('📖 单词卡片',{body:due>0?`今天有 ${due} 个单词需要复习！`:'今天的复习已完成，继续保持！'});
-    scheduleNotif();
-  }, next-now);
-}
-
-// ═══════════════════════════════════════════
-// 主题切换
-// ═══════════════════════════════════════════
-function toggleTheme() {
-  const dark = document.documentElement.getAttribute('data-theme')==='dark';
-  const next = dark?'light':'dark';
-  document.documentElement.setAttribute('data-theme',next);
-  $('darkBtn').textContent = next==='dark'?'☀️':'🌙';
-  sv('fw_theme',next);
-}
-
-// ═══════════════════════════════════════════
-// 清除数据
-// ═══════════════════════════════════════════
-function clearData() {
-  if(!confirm('确定要重置所有数据吗？单词、进度、XP 将全部清空，无法恢复！')) return;
-  ['fw_words','fw_sm2','fw_hist','fw_fav','fw_errors','fw_xp','fw_spright','fw_notif','fw_data_version'].forEach(k=>localStorage.removeItem(k));
-  words=[]; sm2={}; hist={}; favWords=[]; errWords={}; xpData={total:0,badges:[]};
-  saveWords();
-  renderHome();
-  goPage('Home');
-  showToast('✅ 所有数据已重置');
-}
-
-function clearWordsOnly() {
-  if(!confirm('确定清空单词本吗？所有单词将被删除，学习记录保留。')) return;
-  words = [];
-  sm2 = {};
-  saveWords();
-  sv('fw_sm2', {});
-  renderHome();
-  updateDots();
-  showToast('🗑️ 单词本已清空～');
-}
-
-function saveDailyGoal() {
-  const v = document.getElementById('dailyGoalSel').value;
-  sv('fw_daily_goal', parseInt(v));
-  showToast('✅ 每日目标：' + v + ' 个单词');
-}
-
-function saveReviewMode() {
-  const v = document.getElementById('reviewModeSel').value;
-  sv('fw_review_mode', v);
-  const labels = {
-    sm2: '智能间隔（艾宾浩斯）',
-    daily: '每天复习',
-    '3day': '每3天复习',
-    week: '每周复习'
-  };
-  document.getElementById('reviewModeSub').textContent = labels[v] || '';
-  showToast('✅ 复习模式已更新');
-}
-
-function loadSettings() {
-  const goal = ld('fw_daily_goal', 10);
-  const mode = ld('fw_review_mode', 'sm2');
-  const sel = document.getElementById('dailyGoalSel');
-  const modeSel = document.getElementById('reviewModeSel');
-  if(sel) sel.value = String(goal);
-  if(modeSel) {
-    modeSel.value = mode;
-    const labels = { sm2:'智能间隔（艾宾浩斯）', daily:'每天复习', '3day':'每3天复习', week:'每周复习' };
-    const sub = document.getElementById('reviewModeSub');
-    if(sub) sub.textContent = labels[mode] || '';
-  }
-}
-
-// ═══════════════════════════════════════════
-// 初始化
-// ═══════════════════════════════════════════
-
-// ═══════════════════════════════════════════
-// AI 助手（浮动面板，本次会话保留）
-// ═══════════════════════════════════════════
-let aiHistory = [];  // 本次会话，刷新清空
-let aiIsOpen  = false;
-let aiLoading = false;
-
-// ── OpenRouter API 配置 ──
-const OR_KEY   = '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';
-const OR_MODEL = 'anthropic/claude-3.5-haiku';
-
-async function orFetch(system, messages, maxTokens=2000) {
-  // 先尝试 Vercel 代理（生产环境）
-  try {
-    const resp = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: OR_MODEL,
-        max_tokens: maxTokens,
-        messages: [
-          { role: 'system', content: system },
-          ...messages
-        ]
-      })
-    });
-    if(resp.ok) {
-      const data = await resp.json();
-      const text = data.choices?.[0]?.message?.content || '';
-      if(text) return text;
-    }
-  } catch(e) { /* 代理不可用，走直连 */ }
-
-  // 备用：直连 OpenRouter（本地测试/代理失败时）
-  const resp2 = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + OR_KEY,
-      'X-Title': 'Word-Flashcard'
-    },
-    body: JSON.stringify({
-      model: OR_MODEL,
-      max_tokens: maxTokens,
-      messages: [
-        { role: 'system', content: system },
-        ...messages
-      ]
-    })
-  });
-  const data2 = await resp2.json();
-  if(!resp2.ok) throw new Error(`HTTP ${resp2.status}: ${data2.error?.message || JSON.stringify(data2)}`);
-  const text2 = data2.choices?.[0]?.message?.content || '';
-  if(!text2) throw new Error(data2.error?.message || '响应为空');
-  return text2;
-}
-
-const AI_SYSTEM = `你是一个专业的英语单词学习助手，帮助中国用户学英语。
-
-你的能力：
-1. 生成单词列表（任何主题/考试）
-2. 根据用户水平推荐词汇
-3. 解释单词的详细用法、辨析、例句
-4. 用对话方式出题考用户（给中文释义让用户说英文，或反向）
-
-生成单词时的格式规则（非常重要）：
-- 在回复文字之后，必须附上以下格式的JSON数据块：
-<<<WORDS>>>
-[{"word":"单词","meaning":"中文释义","phonetic":"/音标/","example":"英文例句 / 中文翻译"}]
-<<<END>>>
-- 每个单词必须包含全部4个字段
-- example字段用 " / " 分隔英中
-
-普通对话（解释、出题等）直接用中文回复，不需要JSON块。
-回复要简洁友好，适合手机阅读。`;
-
-// ═══════════════════════════════════════════
-// AI 面板 — Tab 切换、生成词汇、考词
-// ═══════════════════════════════════════════
-let _genCount = 10;
-let _quizCount = 10;
-let _quizMode = 'en2cn';
-let _quizAiDeck = [], _quizAiIdx = 0, _quizAiScore = 0;
-let _currentGenResult = [];
-
-function switchAITab(tab) {
-  ['gen','chat','quiz'].forEach(t => {
-    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
-    document.getElementById('pane-' + t).classList.toggle('active', t === tab);
-  });
-}
-
-function setGenCount(btn, n) {
-  _genCount = n;
-  document.querySelectorAll('#genCountBtns .ai-count-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function setQuizCount(btn, n) {
-  _quizCount = n;
-  document.querySelectorAll('#quizCountBtns .ai-count-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function setQuizMode(btn, mode) {
-  _quizMode = mode;
-  document.querySelectorAll('#quizModeBtns .ai-count-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-function quickGen(topic, type) {
-  document.getElementById('genTopic').value = topic;
-  doGen();
-}
-
-async function doGen() {
-  const topic = (document.getElementById('genTopic').value || '常用英语').trim();
-  const btn = document.getElementById('genBtn');
-  btn.disabled = true;
-  btn.textContent = '生成中…';
-
-  // 显示 loading
-  const genBody = document.getElementById('genBody');
-  genBody.innerHTML = `<div class="ai-generating">
-    <div class="ai-gen-spinner"></div>
-    <div class="ai-gen-status">正在生成「${esc(topic)}」词汇…</div>
-  </div>`;
-
-  const prompt = `请生成 ${_genCount} 个关于「${topic}」的英语单词，每个单词包含音标、中文释义和一句例句。
-严格按以下JSON格式返回，不要有其他文字：
-<<<WORDS>>>
-[{"word":"单词","meaning":"中文释义","phonetic":"/音标/","example":"English example. / 中文翻译"}]
-<<<END>>>`;
-
-  try {
-    const raw = await orFetch(
-      '你是英语单词学习助手。只输出要求的JSON格式，不添加任何额外说明。',
-      [{ role: 'user', content: prompt }],
-      4000
-    );
-    const m = raw.match(/<<<WORDS>>>([\s\S]*?)<<<END>>>/);
-    if (!m) throw new Error('格式解析失败');
-    const list = JSON.parse(m[1].trim());
-    _currentGenResult = list.map((w, i) => ({ ...w, _sel: true, _idx: i }));
-    renderGenResult(topic);
-  } catch(e) {
-    genBody.innerHTML = `<div style="text-align:center;padding:40px 16px;color:var(--red)">
-      ⚠️ 生成失败：${esc(e.message)}<br>
-      <button class="ai-quiz-next-btn" style="margin-top:16px;max-width:200px" onclick="resetGenPane()">重试</button>
-    </div>`;
-  }
-}
-
-function renderGenResult(topic) {
-  const genBody = document.getElementById('genBody');
-  const selCount = _currentGenResult.filter(w => w._sel).length;
-  genBody.innerHTML = `
-    <div class="ai-result-box">
-      <div class="ai-result-header">
-        <div class="ai-result-title">📦 ${esc(topic)}</div>
-        <div class="ai-result-count" id="genSelCount">${selCount}/${_currentGenResult.length} 已选</div>
-      </div>
-      <div class="ai-result-list" id="genResultList"></div>
-      <div class="ai-result-actions">
-        <button class="ai-result-add-btn" onclick="addGenWords(true)">➕ 全部加入单词本</button>
-        <button class="ai-result-add-sel-btn" onclick="addGenWords(false)">加入已选</button>
-      </div>
-    </div>
-    <button class="ai-quiz-next-btn" onclick="resetGenPane()">← 重新生成</button>
-  `;
-  renderGenList();
-}
-
-function renderGenList() {
-  const list = document.getElementById('genResultList');
-  if (!list) return;
-  list.innerHTML = _currentGenResult.map((w, i) => `
-    <div class="ai-result-word ${w._sel ? 'selected' : ''}" onclick="toggleGenWord(${i})">
-      <div class="ai-result-word-check">${w._sel ? '✓' : ''}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span class="ai-result-word-en">${esc(w.word)}</span>
-          <span class="ai-result-word-ph">${esc(w.phonetic||'')}</span>
-        </div>
-        <div class="ai-result-word-cn">${esc(w.meaning)}</div>
-      </div>
-      <button style="font-size:18px;padding:4px;background:none;border:none;cursor:pointer;color:var(--text2)" 
-        onclick="event.stopPropagation();speakWordText('${w.word.replace(/'/g,"\'")}')">🔊</button>
-    </div>
-  `).join('');
-  const cnt = document.getElementById('genSelCount');
-  if (cnt) cnt.textContent = _currentGenResult.filter(w=>w._sel).length + '/' + _currentGenResult.length + ' 已选';
-}
-
-function toggleGenWord(i) {
-  _currentGenResult[i]._sel = !_currentGenResult[i]._sel;
-  renderGenList();
-}
-
-function addGenWords(all) {
-  const toAdd = all ? _currentGenResult : _currentGenResult.filter(w => w._sel);
-  if (!toAdd.length) { showToast('没有选中的单词'); return; }
-  let added = 0;
-  const base = words.length ? Math.max(...words.map(w => typeof w.id==='number' ? w.id : 0)) : 0;
-  toAdd.forEach((w, i) => {
-    if (!w.word) return;
-    if (words.some(x => x.word.toLowerCase() === w.word.toLowerCase())) return;
-    words.push({ id: base+i+1, word: w.word.trim(), meaning: w.meaning||'', phonetic: w.phonetic||'', example: w.example||'', group: 'AI生成' });
-    added++;
-  });
-  saveWords(); updateDots(); renderHome();
-  showToast('✅ 已添加 ' + added + ' 个单词到单词本');
-  resetGenPane();
-}
-
-function resetGenPane() {
-  _currentGenResult = [];
-  const genBody = document.getElementById('genBody');
-  genBody.innerHTML = `
-    <div>
-      <div class="ai-gen-section-title">快速生成</div>
-      <div class="ai-quick-grid">
-        <button class="ai-quick-card" onclick="quickGen('雅思高频词','动词')"><div class="ai-quick-card-icon">✈️</div><div class="ai-quick-card-label">雅思词汇</div><div class="ai-quick-card-desc">高频动词名词</div></button>
-        <button class="ai-quick-card" onclick="quickGen('CET-4 核心词','名词')"><div class="ai-quick-card-icon">🎓</div><div class="ai-quick-card-label">四级核心词</div><div class="ai-quick-card-desc">考试必备词汇</div></button>
-        <button class="ai-quick-card" onclick="quickGen('商务英语','常用词')"><div class="ai-quick-card-icon">💼</div><div class="ai-quick-card-label">商务英语</div><div class="ai-quick-card-desc">职场沟通词汇</div></button>
-        <button class="ai-quick-card" onclick="quickGen('日常生活','高频词')"><div class="ai-quick-card-icon">🏠</div><div class="ai-quick-card-label">日常生活</div><div class="ai-quick-card-desc">口语实用词汇</div></button>
-        <button class="ai-quick-card" onclick="quickGen('托福学术词','学术词汇')"><div class="ai-quick-card-icon">📚</div><div class="ai-quick-card-label">托福词汇</div><div class="ai-quick-card-desc">学术高频词汇</div></button>
-        <button class="ai-quick-card" onclick="quickGen('旅行出行','实用词')"><div class="ai-quick-card-icon">🌍</div><div class="ai-quick-card-label">旅行英语</div><div class="ai-quick-card-desc">出行必备用语</div></button>
-      </div>
-    </div>
-    <div>
-      <div class="ai-gen-section-title">自定义生成</div>
-      <div class="ai-custom-box">
-        <div class="ai-custom-row">
-          <input class="ai-custom-input" id="genTopic" placeholder="主题，如：科技、食物、运动…">
-        </div>
-        <div class="ai-count-btns" id="genCountBtns">
-          <button class="ai-count-btn ${_genCount===10?'active':''}" onclick="setGenCount(this,10)">10个</button>
-          <button class="ai-count-btn ${_genCount===20?'active':''}" onclick="setGenCount(this,20)">20个</button>
-          <button class="ai-count-btn ${_genCount===30?'active':''}" onclick="setGenCount(this,30)">30个</button>
-          <button class="ai-count-btn ${_genCount===50?'active':''}" onclick="setGenCount(this,50)">50个</button>
-        </div>
-        <button class="ai-gen-btn" id="genBtn" onclick="doGen()">✨ 开始生成</button>
-      </div>
-    </div>
-  `;
-}
-
-// 考词
-function startAiQuiz() {
-  if (words.length < 4) { showToast('至少需要4个单词才能测验'); return; }
-  _quizAiDeck = [...words].sort(() => Math.random() - .5).slice(0, Math.min(_quizCount, words.length));
-  _quizAiIdx = 0; _quizAiScore = 0;
-  renderAiQuizQuestion();
-}
-
-function renderAiQuizQuestion() {
-  const body = document.getElementById('quizAiBody');
-  if (_quizAiIdx >= _quizAiDeck.length) {
-    const rate = Math.round(_quizAiScore / _quizAiDeck.length * 100);
-    body.innerHTML = `
-      <div style="text-align:center;padding:30px 0">
-        <div style="font-size:56px;margin-bottom:12px">${rate>=80?'🏆':rate>=60?'🎉':'💪'}</div>
-        <div style="font-size:22px;font-weight:700;margin-bottom:8px">测验完成！</div>
-        <div style="font-size:15px;color:var(--text2);margin-bottom:6px">答对 ${_quizAiScore} / ${_quizAiDeck.length} 题</div>
-        <div style="font-size:28px;font-weight:700;color:var(--accent);margin-bottom:24px">${rate}%</div>
-      </div>
-      <button class="ai-quiz-start-btn" onclick="startAiQuiz()">再来一次</button>
-      <button class="ai-quiz-next-btn" style="margin-top:10px" onclick="resetQuizPane()">返回设置</button>
-    `;
-    return;
-  }
-  const w = _quizAiDeck[_quizAiIdx];
-  const wrong = [...words].filter(x => x.id !== w.id).sort(() => Math.random() - .5).slice(0, 3);
-  const opts = [w, ...wrong].sort(() => Math.random() - .5);
-
-  let questionHTML = '', optHTML = '';
-  if (_quizMode === 'en2cn') {
-    questionHTML = `<div class="ai-quiz-prompt">这个单词是什么意思？</div>
-      <div class="ai-quiz-question">${esc(w.word)}</div>
-      <div class="ai-quiz-sub">${esc(w.phonetic||'')}</div>`;
-    optHTML = opts.map(o => `<button class="ai-quiz-opt" onclick="answerAiQuiz(this,${o.id===w.id})">${esc(o.meaning)}</button>`).join('');
-  } else if (_quizMode === 'cn2en') {
-    questionHTML = `<div class="ai-quiz-prompt">对应的英文单词是？</div>
-      <div class="ai-quiz-question">${esc(w.meaning)}</div>`;
-    optHTML = opts.map(o => `<button class="ai-quiz-opt" onclick="answerAiQuiz(this,${o.id===w.id})">${esc(o.word)}</button>`).join('');
-  } else {
-    questionHTML = `<div class="ai-quiz-prompt">请拼写这个单词</div>
-      <div class="ai-quiz-question">${esc(w.meaning)}</div>
-      <div class="ai-quiz-sub">${esc(w.phonetic||'')}</div>`;
-    optHTML = `<div style="grid-column:1/-1">
-      <input id="spellAns" class="ai-custom-input" style="width:100%;text-align:center;font-size:20px;letter-spacing:3px;padding:14px" 
-        placeholder="输入英文单词…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        onkeydown="if(event.key==='Enter')checkAiSpell()">
-      <button class="ai-quiz-start-btn" style="margin-top:10px" onclick="checkAiSpell()">确认</button>
-    </div>`;
-  }
-
-  body.innerHTML = `
-    <div class="ai-quiz-score">第 <b>${_quizAiIdx+1}</b> / ${_quizAiDeck.length} 题 · 已答对 <b>${_quizAiScore}</b></div>
-    <div class="ai-quiz-card">${questionHTML}</div>
-    <div class="ai-quiz-options">${optHTML}</div>
-  `;
-  if (_quizMode === 'spell') setTimeout(() => document.getElementById('spellAns')?.focus(), 100);
-}
-
-function answerAiQuiz(btn, correct) {
-  const btns = document.querySelectorAll('#quizAiBody .ai-quiz-opt');
-  btns.forEach(b => { b.disabled = true; b.style.opacity = '.6'; });
-  btn.style.opacity = '1';
-  btn.classList.add(correct ? 'correct' : 'wrong');
-  if (correct) _quizAiScore++;
-  setTimeout(() => { _quizAiIdx++; renderAiQuizQuestion(); }, 900);
-}
-
-function checkAiSpell() {
-  const inp = document.getElementById('spellAns');
-  if (!inp) return;
-  const val = inp.value.trim().toLowerCase();
-  const w = _quizAiDeck[_quizAiIdx];
-  const correct = val === w.word.toLowerCase();
-  inp.style.borderColor = correct ? 'var(--green)' : 'var(--red)';
-  inp.style.color = correct ? 'var(--green)' : 'var(--red)';
-  inp.disabled = true;
-  if (correct) _quizAiScore++;
-  if (!correct) {
-    const fb = document.createElement('div');
-    fb.style.cssText = 'text-align:center;color:var(--red);font-size:14px;margin-top:8px';
-    fb.textContent = '正确答案：' + w.word;
-    inp.parentNode.appendChild(fb);
-  }
-  setTimeout(() => { _quizAiIdx++; renderAiQuizQuestion(); }, 1200);
-}
-
-function resetQuizPane() {
-  const body = document.getElementById('quizAiBody');
-  body.innerHTML = `
-    <div style="text-align:center;padding:20px 0">
-      <div style="font-size:48px;margin-bottom:12px">🎯</div>
-      <div style="font-size:17px;font-weight:700;margin-bottom:8px">单词测验</div>
-      <div style="font-size:14px;color:var(--text2);margin-bottom:24px">从你的单词本中随机出题，测试掌握程度</div>
-    </div>
-    <div class="ai-gen-section-title">选择题数</div>
-    <div class="ai-count-btns" id="quizCountBtns">
-      <button class="ai-count-btn ${_quizCount===10?'active':''}" onclick="setQuizCount(this,10)">10题</button>
-      <button class="ai-count-btn ${_quizCount===20?'active':''}" onclick="setQuizCount(this,20)">20题</button>
-      <button class="ai-count-btn ${_quizCount===30?'active':''}" onclick="setQuizCount(this,30)">30题</button>
-    </div>
-    <div class="ai-gen-section-title" style="margin-top:12px">出题方式</div>
-    <div class="ai-count-btns" id="quizModeBtns">
-      <button class="ai-count-btn ${_quizMode==='en2cn'?'active':''}" onclick="setQuizMode(this,'en2cn')">英 → 中</button>
-      <button class="ai-count-btn ${_quizMode==='cn2en'?'active':''}" onclick="setQuizMode(this,'cn2en')">中 → 英</button>
-      <button class="ai-count-btn ${_quizMode==='spell'?'active':''}" onclick="setQuizMode(this,'spell')">拼写</button>
-    </div>
-    <button class="ai-quiz-start-btn" style="margin-top:16px" onclick="startAiQuiz()">开始测验</button>
-  `;
-}
-
-function toggleAI() {
-  aiIsOpen = !aiIsOpen;
-  $('aiOverlay').classList.toggle('hidden', !aiIsOpen);
-  $('aiFAB').classList.toggle('open', aiIsOpen);
-  if(aiIsOpen) {
-    setTimeout(() => $('aiInput').focus(), 300);
-    scrollAIBottom();
-  }
-}
-
-function scrollAIBottom() {
-  const msgs = $('aiMessages');
-  if(msgs) msgs.scrollTop = msgs.scrollHeight;
-}
-
-function clearAIHistory() {
-  if(!confirm('清空本次对话记录？')) return;
-  aiHistory = [];
-  $('aiMessages').innerHTML = `<div class="ai-msg ai-bot">
-    <div class="ai-avatar">🤖</div>
-    <div class="ai-bubble">对话已清空，重新开始吧！😊</div>
-  </div>`;
-}
-
-function addMsg(role, htmlContent) {
-  const wrap = $('aiMessages');
-  const div = document.createElement('div');
-  div.className = 'ai-msg ' + (role==='user' ? 'ai-user' : 'ai-bot');
-  if(role === 'user') {
-    div.innerHTML = `<div class="ai-bubble">${htmlContent}</div>`;
-  } else {
-    div.innerHTML = `<div class="ai-avatar">🤖</div><div class="ai-bubble">${htmlContent}</div>`;
-  }
-  wrap.appendChild(div);
-  scrollAIBottom();
-  return div;
-}
-
-function showTyping() {
-  const wrap = $('aiMessages');
-  const div = document.createElement('div');
-  div.className = 'ai-msg ai-bot'; div.id = 'aiTyping';
-  div.innerHTML = `<div class="ai-avatar">🤖</div>
-    <div class="ai-bubble">
-      <span class="ai-typing-dot"></span>
-      <span class="ai-typing-dot"></span>
-      <span class="ai-typing-dot"></span>
-    </div>`;
-  wrap.appendChild(div);
-  scrollAIBottom();
-}
-
-function parseWords(text) {
-  const m = text.match(/<<<WORDS>>>([\s\S]*?)<<<END>>>/);
-  if(!m) return null;
-  try { return JSON.parse(m[1].trim()); } catch(e) { return null; }
-}
-
-function stripWordsBlock(text) {
-  return text.replace(/<<<WORDS>>>[\s\S]*?<<<END>>>/g, '').trim();
-}
-
-function wordsCard(list, groupName) {
-  if(!list || !list.length) return '';
-  const uid = 'wc_' + Date.now();
-  window['_pending_' + uid] = {list, group: groupName};
-  const preview = list.slice(0, 6).map(w =>
-    `<div class="ai-word-row">
-      <div class="ai-word-en">${esc(w.word||'')}</div>
-      <div class="ai-word-ph">${esc(w.phonetic||'')}</div>
-      <div class="ai-word-cn">${esc(w.meaning||'')}</div>
-    </div>`
-  ).join('');
-  const more = list.length > 6 ? `<div style="font-size:12px;color:var(--text2);padding:4px 0">…还有 ${list.length-6} 个单词</div>` : '';
-  return `<div class="ai-words-box">
-    <div class="ai-words-title">📝 共 ${list.length} 个单词</div>
-    ${preview}${more}
-    <button class="ai-add-btn" id="${uid}" onclick="aiAddWords('${uid}')">➕ 全部加入单词本</button>
-  </div>`;
-}
-
-function aiAddWords(uid) {
-  const data = window['_pending_' + uid];
-  if(!data) return;
-  let added = 0;
-  const base = words.length ? Math.max(...words.map(w => typeof w.id==='number' ? w.id : 0)) : 0;
-  data.list.forEach((w, i) => {
-    if(!w.word) return;
-    if(words.some(x => x.word.toLowerCase() === w.word.toLowerCase())) return;
-    words.push({
-      id: base + i + 1,
-      word: w.word.trim(),
-      meaning: w.meaning || '',
-      phonetic: w.phonetic || '',
-      example: w.example || '',
-      group: data.group || 'AI生成'
-    });
-    added++;
-  });
-  saveWords();
-  window['_pending_' + uid] = null;
-  const btn = $(uid);
-  if(btn) { btn.textContent = `✓ 已添加 ${added} 个单词`; btn.disabled = true; }
-  showToast(`✅ 已添加 ${added} 个单词到单词本`);
-  updateDots();
-}
-
-async function aiSend(prefill) {
-  if(aiLoading) return;
-  const input = $('aiInput');
-  const text = (prefill !== undefined ? prefill : input.value).trim();
-  if(!text) return;
-
-  input.value = ''; input.style.height = 'auto';
-  aiLoading = true;
-  $('aiSendBtn').disabled = true;
-
-  // 显示用户消息
-  addMsg('user', esc(text).replace(/\n/g, '<br>'));
-  aiHistory.push({role: 'user', content: text});
-
-  // 显示打字动画
-  showTyping();
-
-  try {
-    const raw = await orFetch(AI_SYSTEM, aiHistory, 2000);
-
-    const wordList  = parseWords(raw);
-    const cleanText = stripWordsBlock(raw);
-
-    // 移除打字动画
-    const typing = $('aiTyping');
-    if(typing) typing.remove();
-
-    // 推导分组名（从用户消息中提取）
-    const groupName = text.replace(/帮我生成|个|单词|词汇|请|给我/g, '').trim().slice(0, 12) || 'AI生成';
-
-    // 构造回复内容
-    let bubbleHTML = cleanText ? esc(cleanText).replace(/\n/g, '<br>') : '';
-    if(wordList) bubbleHTML += wordsCard(wordList, groupName);
-    if(!bubbleHTML) bubbleHTML = '（无回复，请重试）';
-
-    addMsg('bot', bubbleHTML);
-    aiHistory.push({role: 'assistant', content: cleanText + (wordList ? ' [已生成单词列表]' : '')});
-
-  } catch(err) {
-    const typing = $('aiTyping');
-    if(typing) typing.remove();
-    addMsg('bot', '⚠️ 请求失败：' + (err.message || '网络错误') + '<br><span style="font-size:12px;color:var(--text3)">AI功能暂时不可用，请稍后再试</span>');
-    console.error('AI error:', err);
-  }
-
-  aiLoading = false;
-  $('aiSendBtn').disabled = false;
-  $('aiInput').focus();
-}
-
-
-(function init(){
-  // TTS 引擎预热（尽早调用，让声音加载好）
-  _initTTS();
-  // 版本检测：新版本首次打开自动清除旧数据
-  const DATA_VERSION = 'v3_empty';
-  if(localStorage.getItem('fw_data_version') !== DATA_VERSION) {
-    ['fw_words','fw_sm2','fw_hist','fw_fav','fw_errors','fw_xp','fw_spright','fw_notif'].forEach(k => localStorage.removeItem(k));
-    localStorage.setItem('fw_data_version', DATA_VERSION);
-    words = []; sm2 = {}; hist = {}; favWords = []; errWords = {}; xpData = {total:0, badges:[]};
-  }
-  // 应用主题
-  const theme = ld('fw_theme','light');
-  document.documentElement.setAttribute('data-theme',theme);
-  $('darkBtn').textContent = theme==='dark'?'☀️':'🌙';
-  // 渲染首页
-  try { renderHome(); } catch(e){ console.error('renderHome',e); }
-  // 键盘快捷键
-  document.addEventListener('keydown', e => {
-    if(e.key==='Enter' && curPage==='Words') addWord();
-    if(e.key==='Enter' && curPage==='Study') {
-      if(!$('stage2').classList.contains('hidden')) checkSpell();
-    }
-  });
-  // 通知调度
-  scheduleNotif();
-  // 首次打开显示引导页
-  if(words.length === 0 && !ld('fw_onboarded', false)) {
-    document.getElementById('onboardOverlay').classList.remove('hidden');
-  }
-})();
-
-// ═══════════════════════════════════════════
-// 冷启动引导
-// ═══════════════════════════════════════════
-const ONBOARD_PACKS = {
-  metro: {
-    name: '地铁通勤包', group: '地铁通勤',
-    words: [
-      {word:'commute',meaning:'通勤',phonetic:'/kəˈmjuːt/',example:'I commute by subway every day. / 我每天坐地铁通勤。'},
-      {word:'schedule',meaning:'时间表；安排',phonetic:'/ˈʃedjuːl/',example:'Check the train schedule. / 查看列车时刻表。'},
-      {word:'delay',meaning:'延误；推迟',phonetic:'/dɪˈleɪ/',example:'The train was delayed. / 列车晚点了。'},
-      {word:'transfer',meaning:'换乘；转移',phonetic:'/ˈtrænsfɜːr/',example:'Transfer at the next station. / 在下一站换乘。'},
-      {word:'platform',meaning:'站台；月台',phonetic:'/ˈplætfɔːrm/',example:'Wait on platform 3. / 在3号站台等候。'},
-      {word:'destination',meaning:'目的地',phonetic:'/ˌdestɪˈneɪʃn/',example:'What is your destination? / 你的目的地是哪里？'},
-      {word:'peak',meaning:'高峰；顶点',phonetic:'/piːk/',example:'Avoid peak hours. / 避开高峰时段。'},
-      {word:'rush',meaning:'匆忙；冲',phonetic:'/rʌʃ/',example:'Rush hour is very crowded. / 高峰期非常拥挤。'},
-      {word:'fare',meaning:'票价',phonetic:'/fer/',example:'The fare is two dollars. / 票价是两美元。'},
-      {word:'convenient',meaning:'方便的',phonetic:'/kənˈviːniənt/',example:'The subway is very convenient. / 地铁非常方便。'},
-      {word:'efficient',meaning:'高效的',phonetic:'/ɪˈfɪʃnt/',example:'Public transport is efficient. / 公共交通效率很高。'},
-      {word:'navigate',meaning:'导航；找路',phonetic:'/ˈnævɪɡeɪt/',example:'Navigate through the city. / 在城市中导航。'},
-      {word:'crowded',meaning:'拥挤的',phonetic:'/ˈkraʊdɪd/',example:'The train is crowded. / 列车很拥挤。'},
-      {word:'passenger',meaning:'乘客',phonetic:'/ˈpæsɪndʒər/',example:'Passengers must show tickets. / 乘客必须出示票据。'},
-      {word:'announce',meaning:'宣布；播报',phonetic:'/əˈnaʊns/',example:'The driver announced the stop. / 司机播报了站点。'},
-      {word:'exit',meaning:'出口；退出',phonetic:'/ˈeksɪt/',example:'Use exit B for the mall. / 去商场走B出口。'},
-      {word:'priority',meaning:'优先；重点',phonetic:'/praɪˈɒrəti/',example:'Give priority to the elderly. / 优先照顾老人。'},
-      {word:'meanwhile',meaning:'同时；其间',phonetic:'/ˈmiːnwaɪl/',example:'Meanwhile, I studied English. / 与此同时，我在学英语。'},
-      {word:'refresh',meaning:'刷新；恢复精神',phonetic:'/rɪˈfreʃ/',example:'Refresh your mind on the way. / 在途中让思维放松。'},
-      {word:'productive',meaning:'有效率的',phonetic:'/prəˈdʌktɪv/',example:'Make your commute productive. / 让通勤时间有效率。'},
-      {word:'vocabulary',meaning:'词汇量',phonetic:'/vəˈkæbjʊləri/',example:'Build your vocabulary daily. / 每天积累词汇量。'},
-      {word:'persist',meaning:'坚持',phonetic:'/pəˈsɪst/',example:'Persist and you will succeed. / 坚持就会成功。'},
-      {word:'memorize',meaning:'记住；背诵',phonetic:'/ˈmeməraɪz/',example:'Memorize five words daily. / 每天背五个单词。'},
-      {word:'review',meaning:'复习；回顾',phonetic:'/rɪˈvjuː/',example:'Review what you learned. / 复习你学到的内容。'},
-      {word:'progress',meaning:'进步；进展',phonetic:'/ˈprəʊɡres/',example:'Track your progress. / 跟踪你的进步。'},
-      {word:'consistent',meaning:'持续的；一致的',phonetic:'/kənˈsɪstənt/',example:'Be consistent in learning. / 学习要持之以恒。'},
-      {word:'habit',meaning:'习惯',phonetic:'/ˈhæbɪt/',example:'Form a good study habit. / 养成好的学习习惯。'},
-      {word:'focus',meaning:'专注；集中',phonetic:'/ˈfoʊkəs/',example:'Focus on one thing at a time. / 一次专注一件事。'},
-      {word:'achieve',meaning:'实现；达成',phonetic:'/əˈtʃiːv/',example:'You can achieve your goals. / 你能实现你的目标。'},
-      {word:'improve',meaning:'改善；提高',phonetic:'/ɪmˈpruːv/',example:'Improve a little every day. / 每天进步一点点。'},
-    ]
-  },
-  office: {
-    name: '职场英语包', group: '职场英语',
-    words: [
-      {word:'colleague',meaning:'同事',phonetic:'/ˈkɒliːɡ/',example:'My colleague is very helpful. / 我的同事很乐于助人。'},
-      {word:'deadline',meaning:'截止日期',phonetic:'/ˈdedlaɪn/',example:'The deadline is Friday. / 截止日期是周五。'},
-      {word:'presentation',meaning:'演示；报告',phonetic:'/ˌpreznˈteɪʃn/',example:'Give a presentation to the team. / 向团队做报告。'},
-      {word:'negotiate',meaning:'谈判；协商',phonetic:'/nɪˈɡoʊʃieɪt/',example:'Negotiate a better deal. / 谈判争取更好的条件。'},
-      {word:'collaborate',meaning:'合作',phonetic:'/kəˈlæbəreɪt/',example:'Collaborate with your team. / 与团队合作。'},
-      {word:'delegate',meaning:'委派；代表',phonetic:'/ˈdelɪɡeɪt/',example:'Delegate tasks to others. / 把任务委派给他人。'},
-      {word:'feedback',meaning:'反馈',phonetic:'/ˈfiːdbæk/',example:'Give constructive feedback. / 给出建设性反馈。'},
-      {word:'agenda',meaning:'议程；日程',phonetic:'/əˈdʒendə/',example:'What is on the agenda? / 议程上有什么？'},
-      {word:'implement',meaning:'实施；执行',phonetic:'/ˈɪmplɪment/',example:'Implement the new strategy. / 执行新策略。'},
-      {word:'initiative',meaning:'主动性；倡议',phonetic:'/ɪˈnɪʃətɪv/',example:'Take the initiative. / 主动出击。'},
-      {word:'proposal',meaning:'提案；建议书',phonetic:'/prəˈpoʊzl/',example:'Submit a proposal. / 提交提案。'},
-      {word:'budget',meaning:'预算',phonetic:'/ˈbʌdʒɪt/',example:'Manage the budget carefully. / 谨慎管理预算。'},
-      {word:'revenue',meaning:'收入；营收',phonetic:'/ˈrevənjuː/',example:'Increase company revenue. / 增加公司营收。'},
-      {word:'strategy',meaning:'策略；战略',phonetic:'/ˈstrætədʒi/',example:'Develop a marketing strategy. / 制定营销策略。'},
-      {word:'efficient',meaning:'高效的',phonetic:'/ɪˈfɪʃnt/',example:'Be more efficient at work. / 工作更高效。'},
-      {word:'flexible',meaning:'灵活的',phonetic:'/ˈfleksɪbl/',example:'We need flexible solutions. / 我们需要灵活的解决方案。'},
-      {word:'milestone',meaning:'里程碑',phonetic:'/ˈmaɪlstəʊn/',example:'Reach an important milestone. / 达到重要里程碑。'},
-      {word:'stakeholder',meaning:'利益相关者',phonetic:'/ˈsteɪkhoʊldər/',example:'Meet with all stakeholders. / 与所有利益相关方会面。'},
-      {word:'benchmark',meaning:'基准；标杆',phonetic:'/ˈbentʃmɑːrk/',example:'Set a benchmark for quality. / 设定质量基准。'},
-      {word:'outcome',meaning:'结果；成果',phonetic:'/ˈaʊtkʌm/',example:'The outcome was positive. / 结果是积极的。'},
-      {word:'priority',meaning:'优先事项',phonetic:'/praɪˈɒrəti/',example:'Set clear priorities. / 设定明确的优先事项。'},
-      {word:'transparent',meaning:'透明的',phonetic:'/trænsˈpærənt/',example:'Be transparent with your team. / 对团队坦诚透明。'},
-      {word:'innovative',meaning:'创新的',phonetic:'/ˈɪnəveɪtɪv/',example:'We need innovative ideas. / 我们需要创新性想法。'},
-      {word:'sustainable',meaning:'可持续的',phonetic:'/səˈsteɪnəbl/',example:'Build a sustainable business. / 建立可持续的业务。'},
-      {word:'optimize',meaning:'优化',phonetic:'/ˈɒptɪmaɪz/',example:'Optimize the workflow. / 优化工作流程。'},
-      {word:'scalable',meaning:'可扩展的',phonetic:'/ˈskeɪləbl/',example:'Build a scalable system. / 构建可扩展的系统。'},
-      {word:'facilitate',meaning:'促进；使便利',phonetic:'/fəˈsɪlɪteɪt/',example:'Facilitate team communication. / 促进团队沟通。'},
-      {word:'leverage',meaning:'利用；杠杆',phonetic:'/ˈliːvərɪdʒ/',example:'Leverage your strengths. / 利用你的优势。'},
-      {word:'proactive',meaning:'积极主动的',phonetic:'/prəʊˈæktɪv/',example:'Be proactive, not reactive. / 要积极主动，而非被动应对。'},
-      {word:'accountable',meaning:'负责任的',phonetic:'/əˈkaʊntəbl/',example:'Be accountable for your work. / 对自己的工作负责。'},
-    ]
-  },
-  cet4: {
-    name: '四六级核心词', group: '四六级',
-    words: [
-      {word:'abundant',meaning:'丰富的；充裕的',phonetic:'/əˈbʌndənt/',example:'There is abundant food here. / 这里食物丰富。'},
-      {word:'acknowledge',meaning:'承认；致谢',phonetic:'/əkˈnɒlɪdʒ/',example:'Acknowledge your mistakes. / 承认你的错误。'},
-      {word:'adapt',meaning:'适应；改编',phonetic:'/əˈdæpt/',example:'Adapt to new environments. / 适应新环境。'},
-      {word:'allocate',meaning:'分配；拨出',phonetic:'/ˈæləkeɪt/',example:'Allocate resources wisely. / 合理分配资源。'},
-      {word:'ambiguous',meaning:'模糊的；含义不清的',phonetic:'/æmˈbɪɡjuəs/',example:'The instructions were ambiguous. / 说明含糊不清。'},
-      {word:'anticipate',meaning:'预期；期待',phonetic:'/ænˈtɪsɪpeɪt/',example:'We anticipate good results. / 我们预期好的结果。'},
-      {word:'assess',meaning:'评估；评定',phonetic:'/əˈses/',example:'Assess the situation carefully. / 仔细评估情况。'},
-      {word:'assume',meaning:'假设；承担',phonetic:'/əˈsjuːm/',example:'Do not assume the worst. / 不要做最坏的假设。'},
-      {word:'attitude',meaning:'态度；看法',phonetic:'/ˈætɪtjuːd/',example:'Have a positive attitude. / 保持积极的态度。'},
-      {word:'circumstance',meaning:'情况；境况',phonetic:'/ˈsɜːkəmstæns/',example:'Under any circumstance. / 在任何情况下。'},
-      {word:'comprehensive',meaning:'全面的；综合的',phonetic:'/ˌkɒmprɪˈhensɪv/',example:'A comprehensive review. / 全面的复习。'},
-      {word:'concentrate',meaning:'集中；专注',phonetic:'/ˈkɒnsntreɪt/',example:'Concentrate on your studies. / 专注于学习。'},
-      {word:'consequence',meaning:'后果；结果',phonetic:'/ˈkɒnsɪkwəns/',example:'Think of the consequences. / 考虑后果。'},
-      {word:'controversial',meaning:'有争议的',phonetic:'/ˌkɒntrəˈvɜːʃl/',example:'A controversial decision. / 一个有争议的决定。'},
-      {word:'convert',meaning:'转变；转换',phonetic:'/kənˈvɜːt/',example:'Convert energy into power. / 将能量转化为动力。'},
-      {word:'distinguish',meaning:'区分；辨别',phonetic:'/dɪˈstɪŋɡwɪʃ/',example:'Distinguish right from wrong. / 辨别是非。'},
-      {word:'diverse',meaning:'多样的；不同的',phonetic:'/daɪˈvɜːs/',example:'A diverse group of students. / 多元化的学生群体。'},
-      {word:'eliminate',meaning:'消除；淘汰',phonetic:'/ɪˈlɪmɪneɪt/',example:'Eliminate unnecessary steps. / 消除不必要的步骤。'},
-      {word:'emphasize',meaning:'强调；着重',phonetic:'/ˈemfəsaɪz/',example:'Emphasize key points. / 强调重点。'},
-      {word:'encounter',meaning:'遇到；遭遇',phonetic:'/ɪnˈkaʊntər/',example:'Encounter difficulties. / 遇到困难。'},
-      {word:'fundamental',meaning:'基本的；根本的',phonetic:'/ˌfʌndəˈmentl/',example:'Fundamental principles. / 基本原则。'},
-      {word:'generate',meaning:'产生；生成',phonetic:'/ˈdʒenəreɪt/',example:'Generate new ideas. / 产生新想法。'},
-      {word:'inevitable',meaning:'不可避免的',phonetic:'/ɪnˈevɪtəbl/',example:'Change is inevitable. / 变化是不可避免的。'},
-      {word:'interpret',meaning:'解释；口译',phonetic:'/ɪnˈtɜːprɪt/',example:'Interpret the data correctly. / 正确解读数据。'},
-      {word:'maintain',meaning:'维持；保持',phonetic:'/meɪnˈteɪn/',example:'Maintain a healthy lifestyle. / 保持健康的生活方式。'},
-      {word:'obtain',meaning:'获得；得到',phonetic:'/əbˈteɪn/',example:'Obtain necessary information. / 获取必要信息。'},
-      {word:'potential',meaning:'潜力；潜在的',phonetic:'/pəˈtenʃl/',example:'Realize your potential. / 发挥你的潜力。'},
-      {word:'restrict',meaning:'限制；约束',phonetic:'/rɪˈstrɪkt/',example:'Restrict access to the area. / 限制进入该区域。'},
-      {word:'significant',meaning:'重要的；显著的',phonetic:'/sɪɡˈnɪfɪkənt/',example:'A significant improvement. / 显著的进步。'},
-      {word:'transform',meaning:'转变；改变',phonetic:'/trænsˈfɔːm/',example:'Transform your life. / 改变你的生活。'},
-    ]
-  },
-  travel: {
-    name: '旅行出行包', group: '旅行英语',
-    words: [
-      {word:'passport',meaning:'护照',phonetic:'/ˈpɑːspɔːt/',example:'Show your passport please. / 请出示您的护照。'},
-      {word:'boarding',meaning:'登机；登船',phonetic:'/ˈbɔːrdɪŋ/',example:'Boarding starts at gate 5. / 登机在5号登机口开始。'},
-      {word:'customs',meaning:'海关；风俗',phonetic:'/ˈkʌstəmz/',example:'Declare items at customs. / 在海关申报物品。'},
-      {word:'itinerary',meaning:'行程；旅行计划',phonetic:'/aɪˈtɪnəreri/',example:'Plan your itinerary in advance. / 提前规划行程。'},
-      {word:'reservation',meaning:'预订；保留',phonetic:'/ˌrezəˈveɪʃn/',example:'Make a hotel reservation. / 预订酒店。'},
-      {word:'currency',meaning:'货币；通货',phonetic:'/ˈkɜːrənsi/',example:'Exchange currency at the bank. / 在银行兑换货币。'},
-      {word:'accommodation',meaning:'住宿；住所',phonetic:'/əˌkɒməˈdeɪʃn/',example:'Find comfortable accommodation. / 找到舒适的住宿。'},
-      {word:'departure',meaning:'出发；离开',phonetic:'/dɪˈpɑːrtʃər/',example:'Check the departure time. / 查看出发时间。'},
-      {word:'arrival',meaning:'到达；抵达',phonetic:'/əˈraɪvl/',example:'Expected arrival at 3pm. / 预计下午3点到达。'},
-      {word:'luggage',meaning:'行李',phonetic:'/ˈlʌɡɪdʒ/',example:'Claim your luggage here. / 在这里领取行李。'},
-      {word:'souvenir',meaning:'纪念品',phonetic:'/ˌsuːvəˈnɪr/',example:'Buy a souvenir for mom. / 给妈妈买个纪念品。'},
-      {word:'recommend',meaning:'推荐',phonetic:'/ˌrekəˈmend/',example:'Can you recommend a restaurant? / 你能推荐一家餐厅吗？'},
-      {word:'attraction',meaning:'景点；吸引力',phonetic:'/əˈtrækʃn/',example:'Visit the main attractions. / 参观主要景点。'},
-      {word:'authentic',meaning:'真实的；地道的',phonetic:'/ɔːˈθentɪk/',example:'Try authentic local food. / 尝试地道的当地食物。'},
-      {word:'navigate',meaning:'导航；找路',phonetic:'/ˈnævɪɡeɪt/',example:'Navigate using your phone. / 用手机导航。'},
-      {word:'translate',meaning:'翻译',phonetic:'/trænsˈleɪt/',example:'Translate the menu for me. / 帮我翻译菜单。'},
-      {word:'emergency',meaning:'紧急情况',phonetic:'/ɪˈmɜːrdʒənsi/',example:'Call in an emergency. / 紧急情况下打电话。'},
-      {word:'insurance',meaning:'保险',phonetic:'/ɪnˈʃʊərəns/',example:'Travel insurance is important. / 旅行保险很重要。'},
-      {word:'altitude',meaning:'海拔；高度',phonetic:'/ˈæltɪtjuːd/',example:'High altitude can cause sickness. / 高海拔可能导致高原反应。'},
-      {word:'scenic',meaning:'风景优美的',phonetic:'/ˈsiːnɪk/',example:'Take the scenic route. / 走风景优美的路线。'},
-      {word:'local',meaning:'当地的；本地人',phonetic:'/ˈloʊkl/',example:'Ask a local for directions. / 向当地人问路。'},
-      {word:'explore',meaning:'探索；游览',phonetic:'/ɪkˈsplɔːr/',example:'Explore the old town. / 探索古城。'},
-      {word:'experience',meaning:'体验；经历',phonetic:'/ɪkˈspɪəriəns/',example:'An unforgettable experience. / 难忘的体验。'},
-      {word:'adventure',meaning:'冒险；奇遇',phonetic:'/ədˈventʃər/',example:'Seek new adventures. / 寻求新的冒险。'},
-      {word:'destination',meaning:'目的地',phonetic:'/ˌdestɪˈneɪʃn/',example:'Our destination is Paris. / 我们的目的地是巴黎。'},
-      {word:'backpack',meaning:'背包；背包旅行',phonetic:'/ˈbækpæk/',example:'Pack light in your backpack. / 背包要轻装上阵。'},
-      {word:'hostel',meaning:'青年旅社',phonetic:'/ˈhɒstl/',example:'Stay at a cheap hostel. / 住便宜的青年旅社。'},
-      {word:'budget',meaning:'预算；节省',phonetic:'/ˈbʌdʒɪt/',example:'Travel on a tight budget. / 低预算旅行。'},
-      {word:'flexible',meaning:'灵活的',phonetic:'/ˈfleksɪbl/',example:'Keep your plans flexible. / 保持计划的灵活性。'},
-      {word:'memorable',meaning:'难忘的',phonetic:'/ˈmemərəbl/',example:'A memorable journey. / 难忘的旅程。'},
-    ]
-  }
-};
-
-let _onboardSelected = new Set();
-
-function toggleOnboardSet(id) {
-  if(_onboardSelected.has(id)) {
-    _onboardSelected.delete(id);
-    document.getElementById('os_' + id).classList.remove('selected');
-    document.getElementById('oc_' + id).textContent = '';
-  } else {
-    _onboardSelected.add(id);
-    document.getElementById('os_' + id).classList.add('selected');
-    document.getElementById('oc_' + id).textContent = '✓';
-  }
-}
-
-function confirmOnboard() {
-  if(_onboardSelected.size === 0) {
-    showToast('请先选择至少一个词库');
-    return;
-  }
-  const base = words.length ? Math.max(...words.map(w => w.id||0)) : 0;
-  let added = 0;
-  _onboardSelected.forEach(id => {
-    const pack = ONBOARD_PACKS[id];
-    if(!pack) return;
-    pack.words.forEach((w, i) => {
-      if(words.some(x => x.word.toLowerCase() === w.word.toLowerCase())) return;
-      words.push({ id: base + added + 1, word: w.word, meaning: w.meaning, phonetic: w.phonetic||'', example: w.example||'', group: pack.group });
-      added++;
-    });
-  });
-  saveWords();
-  sv('fw_onboarded', true);
-  document.getElementById('onboardOverlay').classList.add('hidden');
-  renderHome(); updateDots();
-  showToast('🎉 已导入 ' + added + ' 个单词，开始学习吧！');
-}
-
-function skipOnboard() {
-  sv('fw_onboarded', true);
-  document.getElementById('onboardOverlay').classList.add('hidden');
-}
-
-// ═══════════════════════════════════════════
-// 遗忘曲线可视化
-// ═══════════════════════════════════════════
-function renderCurve() {
-  const el = document.getElementById('curveBars');
-  if(!el) return;
-  const todayStr = today();
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
-  const tomorrowStr = tomorrow.toISOString().slice(0,10);
-  const in3 = new Date(); in3.setDate(in3.getDate()+3);
-  const in3Str = in3.toISOString().slice(0,10);
-  const in7 = new Date(); in7.setDate(in7.getDate()+7);
-  const in7Str = in7.toISOString().slice(0,10);
-
-  let bins = [
-    { label: '今天', color: '#ff5c6e', count: 0 },
-    { label: '明天', color: '#ffaa00', count: 0 },
-    { label: '3天内', color: '#6c63ff', count: 0 },
-    { label: '7天内', color: '#48c6ef', count: 0 },
-    { label: '7天+', color: '#11c987', count: 0 },
-    { label: '未学', color: '#c0c7d0', count: 0 },
-  ];
-
-  words.forEach(w => {
-    const d = getSm2(w.id);
-    if(!d.due) { bins[5].count++; return; }
-    if(d.due <= todayStr)    { bins[0].count++; }
-    else if(d.due <= tomorrowStr) { bins[1].count++; }
-    else if(d.due <= in3Str) { bins[2].count++; }
-    else if(d.due <= in7Str) { bins[3].count++; }
-    else                      { bins[4].count++; }
-  });
-
-  const max = Math.max(...bins.map(b=>b.count), 1);
-  el.innerHTML = bins.map(b => `
-    <div class="curve-bar-wrap">
-      <div class="curve-bar-count">${b.count}</div>
-      <div class="curve-bar" style="height:${Math.max(4, b.count/max*70)}px;background:${b.color}"></div>
-      <div class="curve-bar-label">${b.label}</div>
-    </div>
-  `).join('');
-}
-
-// ═══════════════════════════════════════════
-// 打卡分享
-// ═══════════════════════════════════════════
-function openShare(wordsLearned) {
-  const overlay = document.getElementById('shareOverlay');
-  if(!overlay) return;
-  const slogans = [
-    '坚持就是胜利，今天的你超棒！',
-    '每天进步一点点，积累成大进步！',
-    '地铁时间没浪费，单词收入囊中！',
-    '不爱单词？学完就爱了！',
-    '今天的努力，明天的流利！'
-  ];
-  document.getElementById('shareNum').textContent = wordsLearned || qDeck.length;
-  document.getElementById('shareStreak').textContent = getStreak();
-  document.getElementById('shareTotal').textContent = words.length;
-  document.getElementById('shareXp').textContent = xpData.total;
-  document.getElementById('shareSlogan').textContent = slogans[Math.floor(Math.random()*slogans.length)];
-  overlay.classList.remove('hidden');
-}
-
-function closeShare() {
-  document.getElementById('shareOverlay').classList.add('hidden');
-}
-
-function copyShareText() {
-  const num = document.getElementById('shareNum').textContent;
-  const streak = document.getElementById('shareStreak').textContent;
-  const total = document.getElementById('shareTotal').textContent;
-  const slogan = document.getElementById('shareSlogan').textContent;
-  const text = `【不爱单词 · 今日打卡】\n今天学了 ${num} 个单词 📖\n已连续学习 ${streak} 天 🔥\n累计掌握 ${total} 个单词\n\n${slogan}\n\n✦ 不爱单词 — 碎片时间背单词`;
-  navigator.clipboard?.writeText(text).then(() => showToast('📋 已复制，快去分享吧！')).catch(() => showToast(text.slice(0,30)+'…'));
-}
-
+function preloadWords() {}
 
 </script>
 
@@ -5102,70 +3989,34 @@ function copyShareText() {
 <!-- ── AI 面板 ── -->
 <div class="ai-overlay hidden" id="aiOverlay">
   <div class="ai-panel">
-
-    <!-- 头部 -->
     <div class="ai-panel-header">
       <div>
-        <div class="ai-panel-title">✨ AI 单词助手</div>
+        <div class="ai-panel-title">🐱 猫猫 AI 助手</div>
         <div class="ai-panel-sub">✨ 喵～有什么想学的？</div>
       </div>
       <div class="ai-header-btns">
         <button class="ai-close-btn" onclick="toggleAI()">✕</button>
       </div>
     </div>
-
-    <!-- Tab 导航 -->
     <div class="ai-tabs">
       <button class="ai-tab active" id="tab-gen" onclick="switchAITab('gen')">📦 生成词汇</button>
       <button class="ai-tab" id="tab-chat" onclick="switchAITab('chat')">💬 自由对话</button>
       <button class="ai-tab" id="tab-quiz" onclick="switchAITab('quiz')">🎯 考我单词</button>
     </div>
-
-    <!-- Tab 内容 -->
     <div class="ai-tab-body">
-
-      <!-- ① 生成词汇 -->
       <div class="ai-tab-pane active" id="pane-gen">
         <div class="ai-gen-body" id="genBody">
-
-          <!-- 快速场景 -->
           <div>
             <div class="ai-gen-section-title">快速生成</div>
             <div class="ai-quick-grid">
-              <button class="ai-quick-card" onclick="quickGen('雅思高频词','动词')">
-                <div class="ai-quick-card-icon">✈️</div>
-                <div class="ai-quick-card-label">雅思词汇</div>
-                <div class="ai-quick-card-desc">高频动词名词</div>
-              </button>
-              <button class="ai-quick-card" onclick="quickGen('CET-4 核心词','名词')">
-                <div class="ai-quick-card-icon">🎓</div>
-                <div class="ai-quick-card-label">四级核心词</div>
-                <div class="ai-quick-card-desc">考试必备词汇</div>
-              </button>
-              <button class="ai-quick-card" onclick="quickGen('商务英语','常用词')">
-                <div class="ai-quick-card-icon">💼</div>
-                <div class="ai-quick-card-label">商务英语</div>
-                <div class="ai-quick-card-desc">职场沟通词汇</div>
-              </button>
-              <button class="ai-quick-card" onclick="quickGen('日常生活','高频词')">
-                <div class="ai-quick-card-icon">🏠</div>
-                <div class="ai-quick-card-label">日常生活</div>
-                <div class="ai-quick-card-desc">口语实用词汇</div>
-              </button>
-              <button class="ai-quick-card" onclick="quickGen('托福学术词','学术词汇')">
-                <div class="ai-quick-card-icon">📚</div>
-                <div class="ai-quick-card-label">托福词汇</div>
-                <div class="ai-quick-card-desc">学术高频词汇</div>
-              </button>
-              <button class="ai-quick-card" onclick="quickGen('旅行出行','实用词')">
-                <div class="ai-quick-card-icon">🌍</div>
-                <div class="ai-quick-card-label">旅行英语</div>
-                <div class="ai-quick-card-desc">出行必备用语</div>
-              </button>
+              <button class="ai-quick-card" onclick="quickGen('雅思高频词','动词')"><div class="ai-quick-card-icon">✈️</div><div class="ai-quick-card-label">雅思词汇</div><div class="ai-quick-card-desc">高频动词名词</div></button>
+              <button class="ai-quick-card" onclick="quickGen('CET-4 核心词','名词')"><div class="ai-quick-card-icon">🎓</div><div class="ai-quick-card-label">四级核心词</div><div class="ai-quick-card-desc">考试必备词汇</div></button>
+              <button class="ai-quick-card" onclick="quickGen('商务英语','常用词')"><div class="ai-quick-card-icon">💼</div><div class="ai-quick-card-label">商务英语</div><div class="ai-quick-card-desc">职场沟通词汇</div></button>
+              <button class="ai-quick-card" onclick="quickGen('日常生活','高频词')"><div class="ai-quick-card-icon">🏠</div><div class="ai-quick-card-label">日常生活</div><div class="ai-quick-card-desc">口语实用词汇</div></button>
+              <button class="ai-quick-card" onclick="quickGen('托福学术词','学术词汇')"><div class="ai-quick-card-icon">📚</div><div class="ai-quick-card-label">托福词汇</div><div class="ai-quick-card-desc">学术高频词汇</div></button>
+              <button class="ai-quick-card" onclick="quickGen('旅行出行','实用词')"><div class="ai-quick-card-icon">🌍</div><div class="ai-quick-card-label">旅行英语</div><div class="ai-quick-card-desc">出行必备用语</div></button>
             </div>
           </div>
-
-          <!-- 自定义 -->
           <div>
             <div class="ai-gen-section-title">自定义生成</div>
             <div class="ai-custom-box">
@@ -5181,22 +4032,13 @@ function copyShareText() {
               <button class="ai-gen-btn" id="genBtn" onclick="doGen()">✨ 开始生成</button>
             </div>
           </div>
-
         </div>
       </div>
-
-      <!-- ② 自由对话 -->
       <div class="ai-tab-pane" id="pane-chat">
         <div class="ai-messages" id="aiMessages">
           <div class="ai-msg ai-bot">
             <div class="ai-avatar">✨</div>
-            <div class="ai-bubble">
-              你好！有什么我可以帮你的吗？😊<br><br>
-              • 问我单词的用法和例句<br>
-              • 让我帮你解释语法<br>
-              • 聊聊英语学习技巧<br>
-              • 或者任何英语相关问题
-            </div>
+            <div class="ai-bubble">你好！有什么我可以帮你的吗？😊<br><br>• 问我单词的用法和例句<br>• 让我帮你解释语法<br>• 聊聊英语学习技巧</div>
           </div>
         </div>
         <div class="ai-input-area">
@@ -5211,8 +4053,6 @@ function copyShareText() {
           </button>
         </div>
       </div>
-
-      <!-- ③ 考我单词 -->
       <div class="ai-tab-pane" id="pane-quiz">
         <div class="ai-quiz-body" id="quizAiBody">
           <div style="text-align:center;padding:20px 0">
@@ -5235,11 +4075,9 @@ function copyShareText() {
           <button class="ai-quiz-start-btn" style="margin-top:16px" onclick="startAiQuiz()">开始测验</button>
         </div>
       </div>
-
     </div>
   </div>
 </div>
-
 
 <!-- ── 冷启动引导页 ── -->
 <div class="onboard-overlay hidden" id="onboardOverlay">
@@ -5247,38 +4085,10 @@ function copyShareText() {
   <div class="onboard-title">欢迎来到不爱单词</div>
   <div class="onboard-sub">选一个词库，马上开始学习<br>地铁上也能轻松背单词 🚇</div>
   <div class="onboard-sets" id="onboardSets">
-    <div class="onboard-set" onclick="toggleOnboardSet('metro')" id="os_metro">
-      <div class="onboard-set-icon">🚇</div>
-      <div>
-        <div class="onboard-set-name">地铁通勤包</div>
-        <div class="onboard-set-desc">30个高频口语词，5分钟搞定</div>
-      </div>
-      <div class="onboard-check" id="oc_metro"></div>
-    </div>
-    <div class="onboard-set" onclick="toggleOnboardSet('office')" id="os_office">
-      <div class="onboard-set-icon">💼</div>
-      <div>
-        <div class="onboard-set-name">职场英语包</div>
-        <div class="onboard-set-desc">30个商务高频词，职场必备</div>
-      </div>
-      <div class="onboard-check" id="oc_office"></div>
-    </div>
-    <div class="onboard-set" onclick="toggleOnboardSet('cet4')" id="os_cet4">
-      <div class="onboard-set-icon">🎓</div>
-      <div>
-        <div class="onboard-set-name">四六级核心词</div>
-        <div class="onboard-set-desc">30个考试必备高频词</div>
-      </div>
-      <div class="onboard-check" id="oc_cet4"></div>
-    </div>
-    <div class="onboard-set" onclick="toggleOnboardSet('travel')" id="os_travel">
-      <div class="onboard-set-icon">✈️</div>
-      <div>
-        <div class="onboard-set-name">旅行出行包</div>
-        <div class="onboard-set-desc">30个出行必备实用词</div>
-      </div>
-      <div class="onboard-check" id="oc_travel"></div>
-    </div>
+    <div class="onboard-set" onclick="toggleOnboardSet('metro')" id="os_metro"><div class="onboard-set-icon">🚇</div><div><div class="onboard-set-name">地铁通勤包</div><div class="onboard-set-desc">30个高频口语词，5分钟搞定</div></div><div class="onboard-check" id="oc_metro"></div></div>
+    <div class="onboard-set" onclick="toggleOnboardSet('office')" id="os_office"><div class="onboard-set-icon">💼</div><div><div class="onboard-set-name">职场英语包</div><div class="onboard-set-desc">30个商务高频词，职场必备</div></div><div class="onboard-check" id="oc_office"></div></div>
+    <div class="onboard-set" onclick="toggleOnboardSet('cet4')" id="os_cet4"><div class="onboard-set-icon">🎓</div><div><div class="onboard-set-name">四六级核心词</div><div class="onboard-set-desc">30个考试必备高频词</div></div><div class="onboard-check" id="oc_cet4"></div></div>
+    <div class="onboard-set" onclick="toggleOnboardSet('travel')" id="os_travel"><div class="onboard-set-icon">✈️</div><div><div class="onboard-set-name">旅行出行包</div><div class="onboard-set-desc">30个出行必备实用词</div></div><div class="onboard-check" id="oc_travel"></div></div>
   </div>
   <button class="onboard-btn" onclick="confirmOnboard()">开始学习 →</button>
   <div class="onboard-skip" onclick="skipOnboard()">我想自己添加单词</div>
@@ -5292,18 +4102,9 @@ function copyShareText() {
       <div class="share-card-num" id="shareNum">0</div>
       <div class="share-card-label">今天背了这么多单词！</div>
       <div class="share-card-stats">
-        <div>
-          <div class="share-card-stat-n" id="shareStreak">0</div>
-          <div class="share-card-stat-l">连续天</div>
-        </div>
-        <div>
-          <div class="share-card-stat-n" id="shareTotal">0</div>
-          <div class="share-card-stat-l">总单词</div>
-        </div>
-        <div>
-          <div class="share-card-stat-n" id="shareXp">0</div>
-          <div class="share-card-stat-l">总 XP</div>
-        </div>
+        <div><div class="share-card-stat-n" id="shareStreak">0</div><div class="share-card-stat-l">连续天</div></div>
+        <div><div class="share-card-stat-n" id="shareTotal">0</div><div class="share-card-stat-l">总单词</div></div>
+        <div><div class="share-card-stat-n" id="shareXp">0</div><div class="share-card-stat-l">总 XP</div></div>
       </div>
       <div class="share-card-slogan" id="shareSlogan">坚持就是胜利，今天的你超棒！</div>
       <div class="share-card-qr">不爱单词 · 碎片时间背单词</div>
@@ -5314,5 +4115,6 @@ function copyShareText() {
     </div>
   </div>
 </div>
+
 </body>
 </html>

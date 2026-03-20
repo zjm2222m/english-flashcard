@@ -3,55 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>单词卡片</title>
+<meta name="theme-color" content="#6c63ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="不爱单词">
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;不爱单词&quot;,&quot;short_name&quot;:&quot;不爱单词&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23f7f8ff&quot;,&quot;theme_color&quot;:&quot;%236c63ff&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236c63ff'/><text y='.9em' font-size='80' x='10'>✦</text></svg>&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+<title>🐱 不爱单词</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
 
 
 /* ═══════════════════════════════════════════
    CSS变量 & 主题
 ═══════════════════════════════════════════ */
 :root {
-  --bg:       #f0f2f5;
+  --bg:       #f7f8ff;
   --surface:  #ffffff;
-  --surface2: #f4f6f8;
-  --surface3: #e8ebee;
-  --border:   rgba(0,0,0,.08);
-  --border2:  rgba(0,0,0,.14);
-  --text:     #111827;
-  --text2:    #6b7280;
-  --text3:    #c0c7d0;
-  --accent:   #2563eb;
-  --accent2:  #0ea5e9;
-  --green:    #16a34a;
-  --red:      #dc2626;
-  --orange:   #ea580c;
-  --grad:     linear-gradient(135deg,#2563eb,#0ea5e9);
-  --grad2:    linear-gradient(135deg,#0ea5e9,#16a34a);
-  --shadow:   0 2px 12px rgba(0,0,0,.08);
-  --shadow-sm:0 1px 4px rgba(0,0,0,.05);
-  --r: 16px; --r2: 12px;
-  --font: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  --surface2: #f0f1ff;
+  --surface3: #e4e6ff;
+  --border:   rgba(100,100,220,.10);
+  --border2:  rgba(100,100,220,.20);
+  --text:     #1e1e3a;
+  --text2:    #6b6b9a;
+  --text3:    #b0b0d0;
+  --accent:   #6c63ff;
+  --accent2:  #48c6ef;
+  --green:    #11c987;
+  --red:      #ff5c6e;
+  --orange:   #ffaa00;
+  --grad:     linear-gradient(135deg,#6c63ff,#48c6ef);
+  --grad2:    linear-gradient(135deg,#48c6ef,#11c987);
+  --shadow:   0 6px 20px rgba(108,99,255,.14);
+  --shadow-sm:0 3px 10px rgba(108,99,255,.09);
+  --r: 24px; --r2: 16px;
+  --font: 'Nunito', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   --mono: 'SF Mono', 'Fira Code', 'Courier New', monospace;
 }
 [data-theme="dark"] {
-  --bg:       #111827;
-  --surface:  #1f2937;
-  --surface2: #273040;
-  --surface3: #374151;
-  --border:   rgba(255,255,255,.08);
-  --border2:  rgba(255,255,255,.14);
-  --text:     #f9fafb;
-  --text2:    #9ca3af;
-  --text3:    #4b5563;
-  --accent:   #3b82f6;
-  --accent2:  #38bdf8;
-  --green:    #22c55e;
-  --red:      #ef4444;
-  --orange:   #f97316;
-  --grad:     linear-gradient(135deg,#3b82f6,#38bdf8);
-  --grad2:    linear-gradient(135deg,#38bdf8,#22c55e);
-  --shadow:   0 4px 24px rgba(0,0,0,.4);
-  --shadow-sm:0 1px 8px rgba(0,0,0,.25);
+  --bg:       #13131f;
+  --surface:  #1e1e30;
+  --surface2: #26263e;
+  --surface3: #30304e;
+  --border:   rgba(150,150,255,.10);
+  --border2:  rgba(150,150,255,.20);
+  --text:     #e8e8ff;
+  --text2:    #8888bb;
+  --text3:    #44446a;
+  --accent:   #8b85ff;
+  --accent2:  #5fd8f5;
+  --green:    #22e8a0;
+  --red:      #ff6b7a;
+  --orange:   #ffbe44;
+  --grad:     linear-gradient(135deg,#8b85ff,#5fd8f5);
+  --grad2:    linear-gradient(135deg,#5fd8f5,#22e8a0);
+  --shadow:   0 6px 24px rgba(0,0,0,.5);
+  --shadow-sm:0 2px 10px rgba(0,0,0,.3);
 }
 
 /* ═══════════════════════════════════════════
@@ -61,6 +67,11 @@
 body {
   font-family: var(--font);
   background: var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(108,99,255,.07) 0%, transparent 35%),
+    radial-gradient(circle at 85% 10%, rgba(72,198,239,.08) 0%, transparent 35%),
+    radial-gradient(circle at 10% 85%, rgba(108,99,255,.05) 0%, transparent 35%),
+    radial-gradient(circle at 80% 80%, rgba(255,170,0,.06) 0%, transparent 35%);
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
@@ -92,25 +103,27 @@ input {
   position: sticky; top: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 20px;
-  height: 52px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  height: 56px;
+  background: linear-gradient(135deg, #6c63ff, #48c6ef);
+  border-bottom: none;
+  box-shadow: 0 4px 16px rgba(108,99,255,.25);
 }
 .topbar-title {
-  font-size: 15px; font-weight: 800;
+  font-size: 17px; font-weight: 900; color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,.15);
   letter-spacing: .12em; text-transform: uppercase;
   color: var(--text);
 }
 .topbar-right { display: flex; gap: 8px; }
 .icon-btn {
-  width: 34px; height: 34px;
-  border-radius: 2px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  background: var(--surface2); font-size: 16px;
-  border: 1px solid var(--border);
-  transition: background .15s, border-color .15s;
+  background: rgba(255,255,255,.25); font-size: 18px;
+  border: 2px solid rgba(255,255,255,.5);
+  transition: background .15s;
 }
-.icon-btn:hover { background: var(--surface3); border-color: var(--border2); }
+.icon-btn:active { background: rgba(255,255,255,.45); }
 
 .pages { flex: 1; }
 .page { display: none; padding: 16px 16px 100px; max-width: 540px; margin: 0 auto; }
@@ -119,24 +132,26 @@ input {
 .bnav {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
   display: flex;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: #fff;
+  border-top: 3px solid var(--accent);
   padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -4px 20px rgba(255,107,53,.15);
 }
 .bnav-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  gap: 2px; padding: 8px 4px 10px;
-  font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  gap: 3px; padding: 8px 4px 10px;
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
   color: var(--text3); position: relative;
-  transition: color .15s;
+  transition: color .15s, transform .15s;
 }
-.bnav-btn.active { color: var(--accent); }
-.bnav-icon { font-size: 20px; line-height: 1.2; }
+.bnav-btn.active { color: var(--accent); transform: translateY(-2px); }
+.bnav-icon { font-size: 26px; line-height: 1.2; }
 .bnav-dot {
-  position: absolute; top: 6px; right: calc(50% - 14px);
-  min-width: 16px; height: 16px; border-radius: 0;
-  background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
+  position: absolute; top: 4px; right: calc(50% - 16px);
+  min-width: 18px; height: 18px; border-radius: 9px;
+  background: var(--red); color: #fff; font-size: 10px; font-weight: 800;
   display: flex; align-items: center; justify-content: center; padding: 0 4px;
+  box-shadow: 0 2px 6px rgba(229,57,53,.4);
 }
 
 /* ═══════════════════════════════════════════
@@ -145,32 +160,36 @@ input {
 .card {
   background: var(--surface);
   border-radius: var(--r);
-  border: 1px solid var(--border);
+  border: 2.5px solid var(--border2);
   overflow: hidden;
+  box-shadow: 4px 4px 0 rgba(200,100,0,.12);
 }
 .section-title {
-  font-size: 10px; font-weight: 700;
-  color: var(--text3); text-transform: uppercase;
-  letter-spacing: .12em; margin: 24px 0 12px;
+  font-size: 12px; font-weight: 800;
+  color: var(--text2); text-transform: uppercase;
+  letter-spacing: .10em; margin: 24px 0 12px;
   display: flex; align-items: center; gap: 8px;
 }
 .section-title::after {
-  content:''; flex:1; height:1px; background: var(--border);
+  content:''; flex:1; height:2px;
+  background: linear-gradient(90deg, var(--border2), transparent);
+  border-radius: 2px;
 }
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
-  gap: 6px; padding: 12px 20px;
-  border-radius: var(--r2); font-size: 13px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase;
-  transition: opacity .15s, transform .1s, background .15s;
+  gap: 6px; padding: 13px 22px;
+  border-radius: var(--r2); font-size: 14px; font-weight: 800;
+  letter-spacing: .03em;
+  transition: transform .12s, box-shadow .12s;
+  box-shadow: 0 4px 0 rgba(0,0,0,.15);
 }
-.btn:active { opacity: .8; transform: scale(.97); }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.15); }
 .btn-primary {
-  background: var(--accent);
-  color: #000;
+  background: var(--grad);
+  color: #fff;
 }
-.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-ghost { background: none; color: var(--accent); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 2px solid var(--border2); box-shadow: 0 4px 0 var(--border2); }
+.btn-ghost { background: none; color: var(--accent); box-shadow: none; }
 .btn-full { width: 100%; }
 .btn-red { background: var(--red); color: #fff; }
 
@@ -241,16 +260,17 @@ input {
 
 .today-card {
   background: var(--surface); border-radius: var(--r);
-  padding: 16px 18px; margin-bottom: 12px;
+  padding: 18px 20px; margin-bottom: 12px;
   display: flex; align-items: center; gap: 16px;
-  border: 1px solid var(--border);
+  border: 2.5px solid var(--border2);
+  box-shadow: 4px 4px 0 rgba(200,100,0,.12);
 }
 .today-num {
-  font-size: 48px; font-weight: 800; color: var(--accent);
+  font-size: 52px; font-weight: 900; color: var(--accent);
   min-width: 70px; text-align: center;
-  font-family: var(--mono); line-height: 1;
+  line-height: 1;
 }
-.today-label { font-size: 14px; font-weight: 700; }
+.today-label { font-size: 16px; font-weight: 800; }
 .today-sub { font-size: 14px; color: var(--text2); margin-top: 3px; }
 .today-btn {
   margin-left: auto; background: var(--accent);
@@ -263,15 +283,17 @@ input {
 .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
 .stat-box {
   background: var(--surface); border-radius: var(--r);
-  padding: 14px 10px; text-align: center;
-  border: 1px solid var(--border);
+  padding: 16px 10px; text-align: center;
+  border: 2.5px solid var(--border2);
+  box-shadow: 3px 3px 0 rgba(200,100,0,.10);
 }
-.stat-n { font-size: 30px; font-weight: 800; font-family: var(--mono); }
-.stat-l { font-size: 10px; color: var(--text3); margin-top: 3px; letter-spacing: .08em; text-transform: uppercase; }
+.stat-n { font-size: 32px; font-weight: 900; color: var(--accent); }
+.stat-l { font-size: 11px; color: var(--text2); margin-top: 4px; font-weight: 700; }
 
 .streak-card {
   background: var(--surface); border-radius: var(--r);
-  padding: 16px; border: 1px solid var(--border); margin-bottom: 12px;
+  padding: 16px; border: 2.5px solid var(--border2);
+  box-shadow: 3px 3px 0 rgba(200,100,0,.10); margin-bottom: 12px;
 }
 .streak-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .streak-fire { font-size: 26px; }
@@ -339,51 +361,55 @@ input {
 }
 .flip-front {
   background: var(--grad); color: #fff;
-  border: none;
+  border: 3px solid rgba(255,255,255,.4);
+  box-shadow: 0 8px 0 rgba(200,80,0,.25), 0 12px 30px rgba(255,107,53,.3);
 }
-.flip-back { background: var(--surface); transform: rotateY(180deg); border: 1px solid var(--border); }
-.flip-word { font-size: 56px; font-weight: 700; margin-bottom: 10px; letter-spacing: -1px; font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; }
-.flip-ph { font-size: 20px; opacity: .85; font-family: var(--mono); }
-.flip-hint { font-size: 13px; opacity: .65; margin-top: 14px; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+.flip-back { background: var(--surface); transform: rotateY(180deg); border: 2.5px solid var(--border2); box-shadow: 4px 4px 0 rgba(200,100,0,.10); }
+.flip-word { font-size: 56px; font-weight: 900; margin-bottom: 10px; letter-spacing: -1px; font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; text-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.flip-ph { font-size: 20px; opacity: .9; font-family: var(--mono); }
+.flip-hint { font-size: 13px; opacity: .75; margin-top: 14px; letter-spacing: .06em; font-weight: 700; }
 .s1-speak-btn {
-  margin-top: 18px; background: rgba(255,255,255,.3); border: 2px solid rgba(255,255,255,.6);
+  margin-top: 18px; background: rgba(255,255,255,.3); border: 3px solid rgba(255,255,255,.7);
   width: 64px; height: 64px; border-radius: 50%; font-size: 28px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all .15s;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 2px 12px rgba(0,0,0,.15);
+  box-shadow: 0 4px 0 rgba(0,0,0,.15);
 }
-.s1-speak-btn:active { background: rgba(255,255,255,.5); transform: scale(.9); }
-.flip-meaning { font-size: 36px; font-weight: 700; margin-bottom: 12px; color: var(--text); letter-spacing: -.02em; }
+.s1-speak-btn:active { background: rgba(255,255,255,.5); transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.15); }
+.flip-meaning { font-size: 36px; font-weight: 900; margin-bottom: 12px; color: var(--text); letter-spacing: -.02em; }
 .flip-example { font-size: 17px; color: var(--text2); line-height: 1.8; text-align: center; }
-.flip-group { font-size: 10px; color: var(--accent); font-weight: 700; margin-top: 10px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--mono); }
+.flip-group { font-size: 11px; color: var(--accent); font-weight: 800; margin-top: 10px; letter-spacing: .08em; text-transform: uppercase; }
 
-.judge-row { display: flex; gap: 10px; }
+.judge-row { display: flex; gap: 12px; padding: 0 4px; }
 .judge-btn {
-  flex: 1; padding: 16px; border-radius: var(--r2);
-  font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  flex: 1; padding: 20px 16px; border-radius: var(--r);
+  font-size: 18px; font-weight: 900;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  border: 1px solid;
-  transition: background .15s, transform .1s;
+  border: 2.5px solid;
+  box-shadow: 0 5px 0 rgba(0,0,0,.12);
+  transition: transform .12s, box-shadow .12s;
+  min-height: 72px;
 }
-.judge-btn:active { transform: scale(.97); }
-.judge-knew { background: rgba(57,255,110,.1); color: var(--green); border-color: var(--green); }
-.judge-forgot { background: rgba(255,59,82,.1); color: var(--red); border-color: var(--red); }
+.judge-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.12); }
+.judge-knew { background: rgba(67,160,71,.12); color: var(--green); border-color: var(--green); }
+.judge-forgot { background: rgba(229,57,53,.10); color: var(--red); border-color: var(--red); }
 
-.spell-box { background: var(--surface); border-radius: var(--r); padding: 24px; margin-bottom: 14px; border: 1px solid var(--border); }
-.spell-meaning { font-size: 26px; font-weight: 700; text-align: center; margin-bottom: 8px; letter-spacing: -.02em; }
-.spell-hint-txt { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 20px; min-height: 20px; font-family: var(--mono); }
+.spell-box { background: var(--surface); border-radius: var(--r); padding: 24px; margin-bottom: 14px; border: 2.5px solid var(--border2); box-shadow: 4px 4px 0 rgba(200,100,0,.10); }
+.spell-meaning { font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 8px; letter-spacing: -.02em; }
+.spell-hint-txt { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 20px; min-height: 20px; }
 .spell-input {
   width: 100%; padding: 14px; text-align: center;
-  font-size: 24px; font-weight: 700; letter-spacing: .25em;
+  font-size: 24px; font-weight: 800; letter-spacing: .25em;
   background: var(--surface2);
-  border: 1px solid var(--border);
+  border: 2.5px solid var(--border2);
   border-radius: var(--r2); color: var(--text);
   font-family: var(--mono);
   transition: border-color .2s;
 }
-.spell-input:focus { border-color: var(--accent); }
+.spell-input:focus { border-color: var(--accent); outline: none; }
 .spell-input.correct { border-color: var(--green); color: var(--green); }
+
 .spell-input.wrong   { border-color: var(--red); color: var(--red); }
 .spell-feedback {
   text-align: center; font-size: 13px; font-weight: 700;
@@ -463,16 +489,17 @@ input {
 
 .word-item {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: var(--surface); border-radius: var(--r);
-  margin-bottom: 6px;
-  border: 1px solid var(--border);
-  transition: border-color .15s;
+  margin-bottom: 8px;
+  border: 2px solid var(--border2);
+  box-shadow: 3px 3px 0 rgba(200,100,0,.08);
+  transition: transform .12s, box-shadow .12s;
 }
-.word-item:hover { border-color: var(--border2); }
+.word-item:active { transform: translateY(2px); box-shadow: 1px 1px 0 rgba(200,100,0,.08); }
 .word-item-main { flex: 1; min-width: 0; }
-.word-en { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
-.word-ph { font-size: 15px; color: var(--accent); font-family: var(--mono); }
+.word-en { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+.word-ph { font-size: 14px; color: var(--accent); }
 .word-cn { font-size: 16px; color: var(--text2); margin-top: 3px; }
 .word-status {
   width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
@@ -679,16 +706,21 @@ input {
    AI 浮动按钮 & 对话面板
 ═══════════════════════════════════════════ */
 .ai-float-btn {
-  position: fixed; right: 18px; bottom: 78px; z-index: 150;
-  width: 52px; height: 52px; border-radius: 50%;
-  background: var(--grad); color: #fff; font-size: 24px;
+  position: fixed; right: 18px; bottom: 82px; z-index: 150;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--grad); color: #fff; font-size: 26px;
   display: flex; align-items: center; justify-content: center;
-  border: none; cursor: pointer;
-  box-shadow: 0 4px 16px rgba(58,140,92,.35);
-  transition: transform .2s, box-shadow .2s;
+  border: 3px solid #fff; cursor: pointer;
+  box-shadow: 0 6px 0 rgba(200,80,0,.3), 0 8px 20px rgba(255,107,53,.4);
+  transition: transform .15s, box-shadow .15s;
+  animation: floatBounce 2.5s ease-in-out infinite;
 }
-.ai-float-btn:active { transform: scale(.92); }
-.ai-float-btn.open { transform: scale(.92); box-shadow: 0 2px 8px rgba(58,140,92,.2); }
+.ai-float-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(200,80,0,.3), 0 4px 10px rgba(255,107,53,.3); animation: none; }
+.ai-float-btn.open { animation: none; transform: rotate(20deg) scale(.95); }
+@keyframes floatBounce {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
 
 .ai-overlay {
   position: fixed; inset: 0; z-index: 500;
@@ -838,6 +870,89 @@ input {
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* ── 引导页 ── */
+.onboard-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+  animation: fadeIn .3s ease;
+}
+.onboard-overlay.hidden { display: none; }
+.onboard-logo { font-size: 56px; margin-bottom: 8px; }
+.onboard-title { font-size: 26px; font-weight: 900; margin-bottom: 6px; color: var(--text); }
+.onboard-sub { font-size: 15px; color: var(--text2); margin-bottom: 28px; text-align: center; line-height: 1.6; }
+.onboard-sets { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.onboard-set {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-radius: var(--r);
+  background: var(--surface); border: 2.5px solid var(--border2);
+  box-shadow: 3px 3px 0 rgba(108,99,255,.08);
+  cursor: pointer; transition: border-color .15s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.onboard-set.selected { border-color: var(--accent); background: rgba(108,99,255,.06); }
+.onboard-set:active { transform: scale(.98); }
+.onboard-set-icon { font-size: 30px; flex-shrink: 0; }
+.onboard-set-name { font-size: 16px; font-weight: 800; color: var(--text); }
+.onboard-set-desc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.onboard-check { width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid var(--border2); margin-left: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all .15s; }
+.onboard-set.selected .onboard-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+.onboard-btn {
+  width: 100%; max-width: 400px; padding: 16px;
+  border-radius: 30px; font-size: 17px; font-weight: 900;
+  background: var(--grad); color: #fff; border: none; cursor: pointer;
+  box-shadow: 0 5px 0 rgba(108,99,255,.25);
+  transition: transform .1s, box-shadow .1s;
+}
+.onboard-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(108,99,255,.25); }
+.onboard-skip { margin-top: 14px; font-size: 14px; color: var(--text3); cursor: pointer; }
+.onboard-skip:active { color: var(--text2); }
+
+/* ── 遗忘曲线卡片 ── */
+.curve-card {
+  background: var(--surface); border-radius: var(--r);
+  border: 2px solid var(--border2); padding: 18px;
+  box-shadow: 3px 3px 0 rgba(108,99,255,.08); margin-bottom: 12px;
+}
+.curve-title { font-size: 13px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+.curve-bars { display: flex; gap: 8px; align-items: flex-end; height: 80px; }
+.curve-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
+.curve-bar { width: 100%; border-radius: 8px 8px 0 0; min-height: 4px; transition: height .5s ease; }
+.curve-bar-label { font-size: 11px; color: var(--text2); font-weight: 700; white-space: nowrap; }
+.curve-bar-count { font-size: 12px; font-weight: 900; color: var(--text); }
+.curve-legend { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.curve-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.curve-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); font-weight: 700; }
+
+/* ── 打卡分享卡片 ── */
+.share-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn .2s ease;
+}
+.share-overlay.hidden { display: none; }
+.share-card {
+  width: 100%; max-width: 360px;
+  background: linear-gradient(135deg, #6c63ff, #48c6ef);
+  border-radius: 28px; padding: 32px 28px;
+  color: #fff; text-align: center;
+  box-shadow: 0 20px 60px rgba(108,99,255,.4);
+}
+.share-card-logo { font-size: 14px; font-weight: 900; letter-spacing: .05em; opacity: .8; margin-bottom: 20px; }
+.share-card-num { font-size: 72px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+.share-card-label { font-size: 16px; opacity: .85; margin-bottom: 20px; }
+.share-card-stats { display: flex; justify-content: center; gap: 28px; margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,.15); border-radius: 18px; }
+.share-card-stat-n { font-size: 24px; font-weight: 900; }
+.share-card-stat-l { font-size: 12px; opacity: .75; margin-top: 2px; }
+.share-card-slogan { font-size: 13px; opacity: .7; margin-bottom: 20px; }
+.share-card-qr { font-size: 11px; opacity: .5; }
+.share-actions { display: flex; gap: 10px; margin-top: 16px; }
+.share-act-btn { flex: 1; padding: 13px; border-radius: 20px; font-size: 14px; font-weight: 800; border: none; cursor: pointer; }
+
 .ai-gen-status { font-size: 14px; color: var(--text2); }
 
 /* ── 对话 Tab ── */
@@ -939,13 +1054,302 @@ input {
   font-size: 13px; font-weight: 700; border: none; cursor: pointer;
 }
 .ai-add-btn:disabled { opacity: .5; cursor: default; }
+
+/* ── 可爱装饰 ── */
+/* 卡片统一加更大圆角阴影 */
+.stat-box, .today-card, .streak-card, .quick-btn, .word-item {
+  transition: transform .15s, box-shadow .15s;
+}
+.stat-box:active, .today-card:active, .quick-btn:active {
+  transform: scale(.97);
+}
+
+/* 进度条变彩虹 */
+.lv-bar-fill {
+  background: linear-gradient(90deg,#fff,rgba(255,255,255,.7)) !important;
+}
+.quest-progress-fill {
+  background: linear-gradient(90deg,#6c63ff,#48c6ef,#11c987) !important;
+}
+
+/* 连续打卡点变爱心色 */
+.sd.done {
+  background: linear-gradient(135deg,#6c63ff,#48c6ef) !important;
+}
+
+/* 翻卡背面边框变粉 */
+.flip-back {
+  border-color: rgba(255,77,141,.25) !important;
+}
+
+/* 拼写输入框圆润 */
+.spell-input {
+  border-radius: 24px !important;
+  border: 3px solid rgba(255,77,141,.2) !important;
+}
+.spell-input:focus { border-color: var(--accent) !important; }
+
+/* 底部导航选中动效 */
+.bnav-btn.active .bnav-icon {
+  filter: drop-shadow(0 0 6px rgba(255,77,141,.6));
+}
+
+/* 快捷按钮图标大一点 */
+.quick-icon { font-size: 32px !important; }
+
+/* 徽章解锁时发光 */
+.badge-item.unlocked {
+  filter: drop-shadow(0 0 8px rgba(255,77,141,.4));
+}
+
+/* toast 变粉 */
+.toast {
+  background: linear-gradient(135deg,#6c63ff,#48c6ef) !important;
+  border-radius: 30px !important;
+  font-weight: 800 !important;
+  font-size: 15px !important;
+  letter-spacing: .02em;
+}
+
+/* AI面板头部变粉紫 */
+.ai-panel-header {
+  background: linear-gradient(135deg,#6c63ff,#48c6ef) !important;
+}
+.ai-panel-title { color: #fff !important; font-size: 18px !important; font-weight: 900 !important; }
+.ai-panel-sub { color: rgba(255,255,255,.85) !important; }
+.ai-clear-btn { background: rgba(255,255,255,.25) !important; color: #fff !important; border-color: rgba(255,255,255,.3) !important; }
+.ai-close-btn { background: rgba(255,255,255,.25) !important; color: #fff !important; border-color: rgba(255,255,255,.3) !important; }
+
+/* Tab 选中颜色 */
+.ai-tab.active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+
+/* 生成按钮更圆 */
+.ai-gen-btn { border-radius: 30px !important; font-size: 16px !important; }
+.ai-quiz-start-btn { border-radius: 30px !important; }
+
+/* 快速卡片悬停 */
+.ai-quick-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,77,141,.2) !important; }
+.ai-quick-card { border-radius: 20px !important; transition: transform .15s, box-shadow .15s !important; }
+.ai-quick-card-icon { font-size: 28px !important; }
+.ai-quick-card-label { font-size: 15px !important; }
+
+/* 单词结果行悬停 */
+.ai-result-word.selected .ai-result-word-check { background: var(--accent) !important; border-color: var(--accent) !important; border-radius: 50% !important; }
+
+/* 错词徽章变红圈 */
+.error-count { border-radius: 50% !important; }
+
+/* section title 更可爱 */
+.section-title { font-size: 13px !important; color: var(--accent) !important; }
+
+/* 搜索框圆润 */
+.search-input { border-radius: 30px !important; border: 2px solid var(--border2) !important; font-size: 15px !important; }
+.filter-tab { border-radius: 30px !important; font-size: 13px !important; font-weight: 800 !important; }
+.filter-tab.active { background: var(--grad) !important; border-color: transparent !important; color: #fff !important; }
+
+/* ── 猫鼠主题细节 ── */
+
+/* 认识/不认识按钮更卡通 */
+.judge-knew {
+  background: linear-gradient(135deg,rgba(17,201,135,.15),rgba(17,201,135,.08)) !important;
+  font-size: 17px !important;
+  border-radius: 30px !important;
+}
+.judge-forgot {
+  background: linear-gradient(135deg,rgba(255,92,110,.12),rgba(255,92,110,.06)) !important;
+  font-size: 17px !important;
+  border-radius: 30px !important;
+}
+
+/* 翻卡提示文字 */
+.flip-hint {
+  background: rgba(255,255,255,.2);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px !important;
+  letter-spacing: .03em !important;
+}
+
+/* 关卡完成图标超大 */
+.stage-clear-icon { font-size: 80px !important; margin-bottom: 12px; }
+.stage-clear-title { font-size: 26px !important; font-weight: 900 !important; }
+.stage-clear { border-radius: var(--r) !important; border: 2px solid var(--border2) !important; }
+
+/* 总结页 emoji 超大 */
+.summary-emoji { font-size: 90px !important; }
+.summary-title { font-size: 28px !important; font-weight: 900 !important; }
+
+/* 统计数字彩色 */
+.stats-hero { border-radius: var(--r) !important; }
+
+/* 错词数量圆圈 */
+.error-count {
+  width: 36px !important; height: 36px !important;
+  font-size: 15px !important; font-weight: 900 !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg,rgba(255,92,110,.2),rgba(255,92,110,.1)) !important;
+}
+
+/* 收藏星星更大 */
+.word-fav { font-size: 22px !important; }
+
+/* 打卡格子更圆 */
+.sd { border-radius: 12px !important; font-weight: 700 !important; font-size: 13px !important; }
+.sd.done { background: linear-gradient(135deg,#6c63ff,#48c6ef) !important; }
+
+/* 快捷操作卡片圆角更大 */
+.quick-btn { border-radius: var(--r) !important; border: 2px solid var(--border2) !important; }
+.quick-label { font-size: 16px !important; }
+
+/* 口语播放按钮 */
+.speak-play {
+  width: 80px !important; height: 80px !important;
+  font-size: 36px !important;
+  border-radius: 50% !important;
+  box-shadow: 0 8px 0 rgba(108,99,255,.25), 0 12px 30px rgba(108,99,255,.3) !important;
+}
+.speak-play:active { transform: translateY(6px) !important; box-shadow: 0 2px 0 rgba(108,99,255,.25) !important; }
+
+/* 今日任务数字更大更粗 */
+.today-num { font-size: 60px !important; font-weight: 900 !important; }
+
+/* 拼写正确/错误边框圆 */
+.spell-input.correct { border-color: var(--green) !important; background: rgba(17,201,135,.06) !important; }
+.spell-input.wrong   { border-color: var(--red) !important; background: rgba(255,92,110,.06) !important; }
+
+/* 等级标签圆润 */
+.lv-badge {
+  display: inline-block;
+  background: rgba(255,255,255,.25);
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+/* 词汇卡片（AI）圆角 */
+.ai-quick-card { border-radius: 24px !important; }
+.ai-result-box { border-radius: 24px !important; }
+.ai-result-word { transition: background .12s; }
+.ai-result-word:hover { background: var(--surface2) !important; }
+
+/* 测验选项按钮更圆 */
+.quiz-opt, .ai-quiz-opt {
+  border-radius: 18px !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  transition: transform .12s, background .12s !important;
+}
+.quiz-opt:active, .ai-quiz-opt:active { transform: scale(.96) !important; }
+.quiz-opt.correct, .ai-quiz-opt.correct {
+  background: linear-gradient(135deg,rgba(17,201,135,.2),rgba(17,201,135,.1)) !important;
+}
+.quiz-opt.wrong, .ai-quiz-opt.wrong {
+  background: linear-gradient(135deg,rgba(255,92,110,.18),rgba(255,92,110,.08)) !important;
+}
+
+/* 输入框统一圆润 */
+.add-input, .ai-custom-input, .ai-textarea, .search-input {
+  border-radius: 20px !important;
+}
+.add-input:focus, .ai-custom-input:focus { border-color: var(--accent) !important; }
+
+/* 设置行圆角 */
+.setting-row { border-radius: var(--r) !important; border: 2px solid var(--border2) !important; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+/* ── 引导页 ── */
+.onboard-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+  animation: fadeIn .3s ease;
+}
+.onboard-overlay.hidden { display: none; }
+.onboard-logo { font-size: 56px; margin-bottom: 8px; }
+.onboard-title { font-size: 26px; font-weight: 900; margin-bottom: 6px; color: var(--text); }
+.onboard-sub { font-size: 15px; color: var(--text2); margin-bottom: 28px; text-align: center; line-height: 1.6; }
+.onboard-sets { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.onboard-set {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-radius: var(--r);
+  background: var(--surface); border: 2.5px solid var(--border2);
+  box-shadow: 3px 3px 0 rgba(108,99,255,.08);
+  cursor: pointer; transition: border-color .15s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.onboard-set.selected { border-color: var(--accent); background: rgba(108,99,255,.06); }
+.onboard-set:active { transform: scale(.98); }
+.onboard-set-icon { font-size: 30px; flex-shrink: 0; }
+.onboard-set-name { font-size: 16px; font-weight: 800; color: var(--text); }
+.onboard-set-desc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.onboard-check { width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid var(--border2); margin-left: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all .15s; }
+.onboard-set.selected .onboard-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+.onboard-btn {
+  width: 100%; max-width: 400px; padding: 16px;
+  border-radius: 30px; font-size: 17px; font-weight: 900;
+  background: var(--grad); color: #fff; border: none; cursor: pointer;
+  box-shadow: 0 5px 0 rgba(108,99,255,.25);
+  transition: transform .1s, box-shadow .1s;
+}
+.onboard-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(108,99,255,.25); }
+.onboard-skip { margin-top: 14px; font-size: 14px; color: var(--text3); cursor: pointer; }
+.onboard-skip:active { color: var(--text2); }
+
+/* ── 遗忘曲线卡片 ── */
+.curve-card {
+  background: var(--surface); border-radius: var(--r);
+  border: 2px solid var(--border2); padding: 18px;
+  box-shadow: 3px 3px 0 rgba(108,99,255,.08); margin-bottom: 12px;
+}
+.curve-title { font-size: 13px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+.curve-bars { display: flex; gap: 8px; align-items: flex-end; height: 80px; }
+.curve-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
+.curve-bar { width: 100%; border-radius: 8px 8px 0 0; min-height: 4px; transition: height .5s ease; }
+.curve-bar-label { font-size: 11px; color: var(--text2); font-weight: 700; white-space: nowrap; }
+.curve-bar-count { font-size: 12px; font-weight: 900; color: var(--text); }
+.curve-legend { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.curve-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.curve-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); font-weight: 700; }
+
+/* ── 打卡分享卡片 ── */
+.share-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn .2s ease;
+}
+.share-overlay.hidden { display: none; }
+.share-card {
+  width: 100%; max-width: 360px;
+  background: linear-gradient(135deg, #6c63ff, #48c6ef);
+  border-radius: 28px; padding: 32px 28px;
+  color: #fff; text-align: center;
+  box-shadow: 0 20px 60px rgba(108,99,255,.4);
+}
+.share-card-logo { font-size: 14px; font-weight: 900; letter-spacing: .05em; opacity: .8; margin-bottom: 20px; }
+.share-card-num { font-size: 72px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+.share-card-label { font-size: 16px; opacity: .85; margin-bottom: 20px; }
+.share-card-stats { display: flex; justify-content: center; gap: 28px; margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,.15); border-radius: 18px; }
+.share-card-stat-n { font-size: 24px; font-weight: 900; }
+.share-card-stat-l { font-size: 12px; opacity: .75; margin-top: 2px; }
+.share-card-slogan { font-size: 13px; opacity: .7; margin-bottom: 20px; }
+.share-card-qr { font-size: 11px; opacity: .5; }
+.share-actions { display: flex; gap: 10px; margin-top: 16px; }
+.share-act-btn { flex: 1; padding: 13px; border-radius: 20px; font-size: 14px; font-weight: 800; border: none; cursor: pointer; }
+
 </style>
 </head>
 <body>
 <div id="app">
   <!-- ── TOPBAR ── -->
   <div class="topbar">
-    <div class="topbar-title">📖 单词卡片</div>
+    <div class="topbar-title">
+      ✦ 不爱单词
+    </div>
     <div class="topbar-right">
       <button class="icon-btn" id="darkBtn" onclick="toggleTheme()">☀️</button>
     </div>
@@ -957,10 +1361,6 @@ input {
     <!-- 首页 -->
     <div class="page active" id="pageHome">
       <!-- 等级卡片 -->
-      <div style="background:linear-gradient(135deg,#2563eb,#0ea5e9);border-radius:var(--r);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-        <span style="font-size:28px">💪</span>
-        <span style="color:#fff;font-size:18px;font-weight:700;letter-spacing:.02em">胖儿该背单词了！</span>
-      </div>
       <div class="lv-card" id="lvCard">
         <div class="lv-top">
           <div class="lv-avatar" id="lvAvatar">🌿</div>
@@ -983,13 +1383,43 @@ input {
       </div>
 
       <!-- 今日任务 -->
-      <div class="today-card">
-        <div class="today-num" id="todayNum">0</div>
-        <div>
-          <div class="today-label">今日待复习</div>
-          <div class="today-sub" id="todaySub">加载中…</div>
+      <!-- 今日任务卡 -->
+      <div class="today-card" style="flex-direction:column;align-items:stretch;gap:12px;padding:20px">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div class="today-num" id="todayNum">0</div>
+          <div style="flex:1">
+            <div class="today-label">📚 今日任务</div>
+            <div class="today-sub" id="todaySub">加载中…</div>
+          </div>
+          <button class="today-btn" onclick="goStudy()" style="border-radius:30px;font-size:16px;padding:14px 26px;font-weight:900;letter-spacing:.02em;white-space:nowrap">开始学习 →</button>
         </div>
-        <button class="today-btn" onclick="goStudy()">开始学习 →</button>
+        <!-- 今日进度条 -->
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:700">
+            <span id="todayProgressLabel">今日进度</span>
+            <span id="todayProgressPct">0%</span>
+          </div>
+          <div style="height:10px;background:var(--surface3);border-radius:10px;overflow:hidden">
+            <div id="todayProgressBar" style="height:10px;border-radius:10px;background:var(--grad);transition:width .5s ease;width:0%"></div>
+          </div>
+        </div>
+        <!-- 预计时间 -->
+        <div style="display:flex;gap:16px">
+          <div style="flex:1;background:var(--surface2);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:8px;border:1.5px solid var(--border2)">
+            <span style="font-size:20px">🚇</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:var(--text)" id="estTime">约 0 分钟</div>
+              <div style="font-size:11px;color:var(--text2)">完成所需时间</div>
+            </div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:8px;border:1.5px solid var(--border2)">
+            <span style="font-size:20px">🔥</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:var(--text)" id="todayDoneCount">0 / 0</div>
+              <div style="font-size:11px;color:var(--text2)">今日已完成</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 统计 -->
@@ -1002,7 +1432,7 @@ input {
       <!-- 7天记录 -->
       <div class="streak-card">
         <div class="streak-top">
-          <div class="streak-fire">🔥</div>
+          <div class="streak-fire">🐾</div>
           <div>
             <div class="streak-num" id="streakNum">0</div>
             <div class="streak-lbl">天连续学习</div>
@@ -1042,13 +1472,16 @@ input {
               <div class="flip-face flip-front">
                 <div class="flip-word" id="s1Word"></div>
                 <div class="flip-ph" id="s1Ph"></div>
-                <button class="s1-speak-btn" onclick="event.stopPropagation();speakWordText($('s1Word').textContent)" title="朗读">🔊</button>
-                <div class="flip-hint">点击翻转查看释义 →</div>
+                <button class="s1-speak-btn" onclick="event.stopPropagation();speakWordText($('s1Word').textContent)" title="朗读">
+                  🔊
+                </button>
+                <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;letter-spacing:.04em">点击朗读</div>
+                <div class="flip-hint">👆 点击翻转</div>
               </div>
               <div class="flip-face flip-back">
                 <div class="flip-meaning" id="s1Meaning"></div>
                 <div class="flip-example" id="s1Example"></div>
-                <div class="flip-group" id="s1Group"></div>
+                <div class="flip-group" id="s1Group" style="display:none"></div>
               </div>
             </div>
           </div>
@@ -1056,8 +1489,8 @@ input {
             <button class="btn btn-secondary btn-full" style="margin-bottom:10px" onclick="flipCard()">翻转看释义</button>
           </div>
           <div id="s1After" class="hidden judge-row">
-            <button class="judge-btn judge-forgot" onclick="judgeWord(false)">😕 不认识</button>
-            <button class="judge-btn judge-knew" onclick="judgeWord(true)">✅ 认识</button>
+            <button class="judge-btn judge-forgot" onclick="judgeWord(false)">🐭 不认识</button>
+            <button class="judge-btn judge-knew" onclick="judgeWord(true)">✅ 认识！</button>
           </div>
         </div>
 
@@ -1084,11 +1517,17 @@ input {
             <div class="speak-ph" id="s3Ph"></div>
             <button class="speak-play" id="s3PlayBtn" onclick="speakWord()">🔊</button>
           </div>
-          <p style="text-align:center;color:var(--text2);font-size:14px;margin-bottom:16px">
-            听音跟读，自行判断是否正确
-          </p>
+          <!-- 记忆点（自动生成） -->
+          <div id="s3MemBox" style="margin:0 0 14px;padding:14px 16px;border-radius:20px;
+            background:linear-gradient(135deg,rgba(108,99,255,.08),rgba(72,198,239,.08));
+            border:1.5px solid rgba(108,99,255,.2);min-height:52px;
+            display:flex;align-items:center;justify-content:center">
+            <div id="s3MemContent" style="font-size:14px;line-height:1.75;color:var(--text);width:100%;text-align:left">
+              <span style="color:var(--text3);font-size:13px">💡 记忆点加载中…</span>
+            </div>
+          </div>
           <div class="judge-row">
-            <button class="judge-btn judge-forgot" onclick="stage3Done(false)">😕 没跟上</button>
+            <button class="judge-btn judge-forgot" onclick="stage3Done(false)">🐭 没跟上</button>
             <button class="judge-btn judge-knew" onclick="stage3Done(true)">✅ 跟读成功</button>
           </div>
         </div>
@@ -1098,12 +1537,12 @@ input {
           <div class="stage-clear-icon" id="clearIcon">⭐</div>
           <div class="stage-clear-title" id="clearTitle">关卡完成！</div>
           <div class="stage-clear-sub" id="clearSub">继续下一关</div>
-          <button class="btn btn-primary btn-full" style="margin-top:20px" onclick="nextStage()">继续 →</button>
+          <button class="btn btn-primary btn-full" style="margin-top:20px;border-radius:30px" onclick="nextStage()">继续冲！🐾</button>
         </div>
 
         <!-- 空状态 -->
         <div id="studyEmpty" class="empty hidden">
-          📭 单词本还是空的<br>
+          📭 还没有单词呢～<br>
           用 <b>✨ AI助手</b> 一键生成，或手动添加单词<br>
           <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
             <button class="btn btn-primary" onclick="toggleAI()">✨ AI 生成词汇</button>
@@ -1120,7 +1559,8 @@ input {
             <div><div class="summary-stat-n" id="sumWords">0</div><div class="summary-stat-l">单词</div></div>
             <div><div class="summary-stat-n" id="sumXp">+0</div><div class="summary-stat-l">XP</div></div>
           </div>
-          <button class="btn btn-primary btn-full" onclick="goPage('Home')">返回首页</button>
+          <button class="btn btn-primary btn-full" style="border-radius:30px" onclick="goPage('Home')">🏠 回家啦！</button>
+          <button class="btn btn-secondary btn-full" style="border-radius:30px;margin-top:10px" onclick="openShare()">🎉 分享今日打卡</button>
         </div>
       </div>
     </div>
@@ -1137,7 +1577,7 @@ input {
           <input class="add-input" id="inPhonetic" placeholder="音标（可选）">
           <input class="add-input" id="inExample" placeholder="例句（可选）">
         </div>
-        <button class="btn btn-primary btn-full" onclick="addWord()">+ 添加单词</button>
+        <button class="btn btn-primary btn-full" style="border-radius:30px" onclick="addWord()">🐾 添加单词</button>
       </div>
 
       <!-- 搜索+筛选 -->
@@ -1151,7 +1591,7 @@ input {
       <button id="loadMoreBtn" class="load-more hidden" onclick="loadMore()">加载更多</button>
 
       <!-- 词库选择 -->
-      <p class="section-title">导入内置词库</p>
+      <p class="section-title">🐭 词库宝箱</p>
       <div id="vocabList"></div>
     </div>
 
@@ -1159,7 +1599,19 @@ input {
     <div class="page" id="pageStats">
       <div class="stats-hero">
         <div class="stats-hero-n" id="stHeroN">0</div>
-        <div class="stats-hero-l">总学习单词数</div>
+        <div class="stats-hero-l">📖 已学习单词</div>
+      </div>
+
+      <!-- 遗忘曲线分布 -->
+      <div class="curve-card">
+        <div class="curve-title">📈 复习到期分布</div>
+        <div class="curve-bars" id="curveBars"></div>
+        <div class="curve-legend">
+          <div class="curve-legend-item"><div class="curve-dot" style="background:#ff5c6e"></div>今天到期</div>
+          <div class="curve-legend-item"><div class="curve-dot" style="background:#ffaa00"></div>明天</div>
+          <div class="curve-legend-item"><div class="curve-dot" style="background:#6c63ff"></div>3天内</div>
+          <div class="curve-legend-item"><div class="curve-dot" style="background:#11c987"></div>7天+</div>
+        </div>
       </div>
       <div class="stats-4grid">
         <div class="stats-box"><div class="stats-box-n" id="stsDue">0</div><div class="stats-box-l">今日待复习</div></div>
@@ -1245,7 +1697,7 @@ input {
       </div>
       <div id="errList"></div>
       <div id="favList" class="hidden"></div>
-      <button class="btn btn-primary btn-full" id="reviewErrBtn" onclick="reviewErrors()" style="margin-top:10px">一键复习错词</button>
+      <button class="btn btn-primary btn-full" id="reviewErrBtn" onclick="reviewErrors()" style="margin-top:10px;border-radius:30px">🐭 一键复习错词</button>
     </div>
 
   </div><!-- /pages -->
@@ -1256,18 +1708,18 @@ input {
       <span class="bnav-icon">🏠</span>首页
     </button>
     <button class="bnav-btn" id="bnStudy" onclick="goStudy()">
-      <span class="bnav-icon">📚</span>学习
+      <span class="bnav-icon">📖</span>学习
       <span class="bnav-dot hidden" id="studyDot"></span>
     </button>
     <button class="bnav-btn" id="bnWords" onclick="goPage('Words')">
-      <span class="bnav-icon">📖</span>单词本
+      <span class="bnav-icon">📝</span>单词本
     </button>
     <button class="bnav-btn" id="bnErrors" onclick="goPage('Errors')">
-      <span class="bnav-icon">❌</span>错词本
+      <span class="bnav-icon">🧀</span>错词本
       <span class="bnav-dot hidden" id="errorDot"></span>
     </button>
     <button class="bnav-btn" id="bnStats" onclick="goPage('Stats')">
-      <span class="bnav-icon">📊</span>统计
+      <span class="bnav-icon">⭐</span>统计
     </button>
   </div>
 </div>
@@ -1297,7 +1749,7 @@ input {
 <div class="modal-overlay hidden" id="quizOverlay">
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div class="modal-title">🎯 多选题</div>
+      <div class="modal-title">🎯 猫猫出题啦</div>
       <span style="font-size:13px;color:var(--text2)" id="quizProgress">1/10</span>
     </div>
     <div id="quizBody"></div>
@@ -2979,13 +3431,13 @@ const LEVELS = [
   {xp:3000,name:'大师',   icon:'👑', lv:8},
 ];
 const BADGES = [
-  {id:'first',   icon:'🌟', name:'第一步',   desc:'学会第1个单词'},
-  {id:'ten',     icon:'📖', name:'十词达人',  desc:'掌握10个单词'},
-  {id:'fifty',   icon:'🎯', name:'词汇能手',  desc:'掌握50个单词'},
-  {id:'hundred', icon:'🏆', name:'百词王者',  desc:'掌握100个单词'},
-  {id:'streak3', icon:'🔥', name:'3日连击',   desc:'连续学习3天'},
-  {id:'streak7', icon:'⚡', name:'一周坚持',  desc:'连续学习7天'},
-  {id:'spell10', icon:'✍️', name:'拼写达人',  desc:'正确拼写10次'},
+  {id:'first',   icon:'🐾', name:'小猫咪',    desc:'学会第1个单词'},
+  {id:'ten',     icon:'📖', name:'猫咪学徒',  desc:'掌握10个单词'},
+  {id:'fifty',   icon:'🎯', name:'聪明猫猫',  desc:'掌握50个单词'},
+  {id:'hundred', icon:'👑', name:'猫王驾到',  desc:'掌握100个单词'},
+  {id:'streak3', icon:'🔥', name:'追鼠3连',   desc:'连续学习3天'},
+  {id:'streak7', icon:'⚡', name:'捉鼠达人',  desc:'连续学习7天'},
+  {id:'spell10', icon:'🧀', name:'奶酪收集',  desc:'正确拼写10次'},
 ];
 
 function getLevel(xp) {
@@ -3073,7 +3525,8 @@ function renderHome() {
   const lv  = getLevel(xp);
   const nx  = getNextLevel(xp);
   const pct = nx ? Math.round((xp - lv.xp) / (nx.xp - lv.xp) * 100) : 100;
-  $('lvAvatar').textContent = lv.icon;
+  const avatarIcons = ['🌱','🌿','📗','📘','🎯','🏅','🥇','🎓','👑','🌟'];
+  $('lvAvatar').textContent = avatarIcons[lv.lv-1] || '⭐';
   $('lvName').textContent   = lv.name;
   $('lvBadge').textContent  = 'Lv.' + lv.lv;
   $('lvXpTotal').textContent = xp;
@@ -3084,7 +3537,23 @@ function renderHome() {
   // 今日
   const due = getDueWords();
   $('todayNum').textContent = words.length === 0 ? '0' : due.length;
-  $('todaySub').textContent = words.length === 0 ? '还没有单词，去添加吧 →' : due.length ? '个单词待复习' : '今日已完成 🎉';
+  $('todaySub').textContent = words.length === 0 ? '去抓几只单词吧 🐭' : due.length ? '只单词在等你 🐾' : '今日全部搞定！🎉';
+
+  // 今日进度条
+  const totalWords  = words.length;
+  const doneToday   = totalWords - due.length;
+  const todayPct    = totalWords > 0 ? Math.round(doneToday / totalWords * 100) : 0;
+  const barEl  = document.getElementById('todayProgressBar');
+  const pctEl  = document.getElementById('todayProgressPct');
+  const doneEl = document.getElementById('todayDoneCount');
+  const estEl  = document.getElementById('estTime');
+  if(barEl)  barEl.style.width  = todayPct + '%';
+  if(pctEl)  pctEl.textContent  = todayPct + '%';
+  if(doneEl) doneEl.textContent = doneToday + ' / ' + totalWords;
+  if(estEl) {
+    const mins = Math.ceil(due.length * 30 / 60);
+    estEl.textContent = due.length === 0 ? '已完成 🎉' : '约 ' + mins + ' 分钟';
+  }
 
   // 统计
   const learned = words.filter(w=>getSm2(w.id).rep>0).length;
@@ -3137,7 +3606,7 @@ function startQuest(list) {
     } else {
       // 今日已学完，显示完成提示
       const el = $('studyEmpty');
-      el.innerHTML = `🎉 今日单词已全部学完！<br>明天继续保持 💪<br>
+      el.innerHTML = `🎉 今日任务全部完成！<br>猫猫为你骄傲 🐾<br>
         <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
           <button class="btn btn-primary" onclick="toggleAI()">✨ AI 生成更多</button>
           <button class="btn btn-secondary" onclick="goPage('Words')">单词本</button>
@@ -3198,7 +3667,8 @@ function showStage(n) {
     showStudySection('stage3');
     $('s3Word').textContent = w.word;
     $('s3Ph').textContent   = w.phonetic||'';
-    // 自动播放已禁用（手机浏览器拦截）
+    // 自动生成记忆点
+    autoMemTip(w);
   }
 }
 
@@ -3340,6 +3810,53 @@ function speakWordText(text) {
   if(_ttsVoice) u.voice = _ttsVoice;
   speechSynthesis.speak(u);
 }
+
+// ── 记忆点 ──────────────────────────────
+const _memCache = {};  // word → html，避免重复请求
+
+async function _fetchMemTip(word, meaning) {
+  if(_memCache[word]) return _memCache[word];
+
+  const prompt = `请为英语单词"${word}"（中文意思：${meaning}）生成一个超级好记的记忆点。
+要求：
+1. 先用1句话给出词根/词缀分析（如果有的话）
+2. 再用1-2句给出有趣的联想记忆法或谐音梗
+3. 语言简洁有趣，适合中国学生，总共不超过4句话
+直接输出内容，不要加标题或序号。`;
+
+  const raw = await orFetch(
+    '你是英语记忆专家，专门帮中国学生用有趣的方式记住英语单词。回复简洁有趣，不超过4句话。',
+    [{ role: 'user', content: prompt }],
+    400
+  );
+
+  const formatted = raw.trim()
+    .replace(/\n+/g, '<br>')
+    .replace(/「(.+?)」/g, '<b style="color:var(--accent)">「$1」</b>')
+    .replace(/(词根|词缀|来自|源于|谐音)([^，。<]{1,20})/g,
+      '<b style="color:var(--accent)">$1$2</b>');
+
+  const html = `<div style="font-size:12px;color:var(--text2);font-weight:800;margin-bottom:6px;letter-spacing:.04em">💡 记忆点</div><div style="font-size:14px;line-height:1.75">${formatted}</div>`;
+  _memCache[word] = html;
+  return html;
+}
+
+// 第三关：自动生成，显示在 s3MemContent
+async function autoMemTip(w) {
+  const el = document.getElementById('s3MemContent');
+  if(!el) return;
+  el.innerHTML = '<span style="color:var(--text3);font-size:13px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;animation:spin .8s linear infinite">⟳</span> 记忆点生成中…</span>';
+  try {
+    const html = await _fetchMemTip(w.word, w.meaning);
+    el.innerHTML = html;
+  } catch(e) {
+    console.error('[记忆点错误]', e);
+    el.innerHTML = '<span style="color:var(--text3);font-size:13px">💡 ' + (e.message||'生成失败') + '</span>';
+  }
+}
+
+// 翻卡背面按钮（已移除，保留空函数兼容）
+function loadMemTip() {}
 
 function speakWordById(id) {
   const w = words.find(w => w.id === id);
@@ -3496,6 +4013,7 @@ function renderStats() {
   updateNotifStatus();
   // 学习计划设置
   loadSettings();
+  renderCurve();
 }
 
 // ═══════════════════════════════════════════
@@ -3723,7 +4241,7 @@ function clearWordsOnly() {
   sv('fw_sm2', {});
   renderHome();
   updateDots();
-  showToast('✅ 单词本已清空');
+  showToast('🗑️ 单词本已清空～');
 }
 
 function saveDailyGoal() {
@@ -3771,14 +4289,39 @@ let aiIsOpen  = false;
 let aiLoading = false;
 
 // ── OpenRouter API 配置 ──
-const OR_KEY   = '';  // Key 在 Vercel 环境变量里，无需填写
-const OR_URL   = '/api/chat';  // Vercel 代理
+const OR_KEY   = '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';
 const OR_MODEL = 'anthropic/claude-3.5-haiku';
 
 async function orFetch(system, messages, maxTokens=2000) {
-  const resp = await fetch('/api/chat', {
+  // 先尝试 Vercel 代理（生产环境）
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: OR_MODEL,
+        max_tokens: maxTokens,
+        messages: [
+          { role: 'system', content: system },
+          ...messages
+        ]
+      })
+    });
+    if(resp.ok) {
+      const data = await resp.json();
+      const text = data.choices?.[0]?.message?.content || '';
+      if(text) return text;
+    }
+  } catch(e) { /* 代理不可用，走直连 */ }
+
+  // 备用：直连 OpenRouter（本地测试/代理失败时）
+  const resp2 = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + OR_KEY,
+      'X-Title': 'Word-Flashcard'
+    },
     body: JSON.stringify({
       model: OR_MODEL,
       max_tokens: maxTokens,
@@ -3788,11 +4331,11 @@ async function orFetch(system, messages, maxTokens=2000) {
       ]
     })
   });
-  const data = await resp.json();
-  if(!resp.ok) throw new Error(`HTTP ${resp.status}: ${data.error?.message || JSON.stringify(data)}`);
-  const text = data.choices?.[0]?.message?.content || '';
-  if(!text) throw new Error(data.error?.message || '响应为空');
-  return text;
+  const data2 = await resp2.json();
+  if(!resp2.ok) throw new Error(`HTTP ${resp2.status}: ${data2.error?.message || JSON.stringify(data2)}`);
+  const text2 = data2.choices?.[0]?.message?.content || '';
+  if(!text2) throw new Error(data2.error?.message || '响应为空');
+  return text2;
 }
 
 const AI_SYSTEM = `你是一个专业的英语单词学习助手，帮助中国用户学英语。
@@ -4279,12 +4822,282 @@ async function aiSend(prefill) {
   });
   // 通知调度
   scheduleNotif();
+  // 首次打开显示引导页
+  if(words.length === 0 && !ld('fw_onboarded', false)) {
+    document.getElementById('onboardOverlay').classList.remove('hidden');
+  }
 })();
+
+// ═══════════════════════════════════════════
+// 冷启动引导
+// ═══════════════════════════════════════════
+const ONBOARD_PACKS = {
+  metro: {
+    name: '地铁通勤包', group: '地铁通勤',
+    words: [
+      {word:'commute',meaning:'通勤',phonetic:'/kəˈmjuːt/',example:'I commute by subway every day. / 我每天坐地铁通勤。'},
+      {word:'schedule',meaning:'时间表；安排',phonetic:'/ˈʃedjuːl/',example:'Check the train schedule. / 查看列车时刻表。'},
+      {word:'delay',meaning:'延误；推迟',phonetic:'/dɪˈleɪ/',example:'The train was delayed. / 列车晚点了。'},
+      {word:'transfer',meaning:'换乘；转移',phonetic:'/ˈtrænsfɜːr/',example:'Transfer at the next station. / 在下一站换乘。'},
+      {word:'platform',meaning:'站台；月台',phonetic:'/ˈplætfɔːrm/',example:'Wait on platform 3. / 在3号站台等候。'},
+      {word:'destination',meaning:'目的地',phonetic:'/ˌdestɪˈneɪʃn/',example:'What is your destination? / 你的目的地是哪里？'},
+      {word:'peak',meaning:'高峰；顶点',phonetic:'/piːk/',example:'Avoid peak hours. / 避开高峰时段。'},
+      {word:'rush',meaning:'匆忙；冲',phonetic:'/rʌʃ/',example:'Rush hour is very crowded. / 高峰期非常拥挤。'},
+      {word:'fare',meaning:'票价',phonetic:'/fer/',example:'The fare is two dollars. / 票价是两美元。'},
+      {word:'convenient',meaning:'方便的',phonetic:'/kənˈviːniənt/',example:'The subway is very convenient. / 地铁非常方便。'},
+      {word:'efficient',meaning:'高效的',phonetic:'/ɪˈfɪʃnt/',example:'Public transport is efficient. / 公共交通效率很高。'},
+      {word:'navigate',meaning:'导航；找路',phonetic:'/ˈnævɪɡeɪt/',example:'Navigate through the city. / 在城市中导航。'},
+      {word:'crowded',meaning:'拥挤的',phonetic:'/ˈkraʊdɪd/',example:'The train is crowded. / 列车很拥挤。'},
+      {word:'passenger',meaning:'乘客',phonetic:'/ˈpæsɪndʒər/',example:'Passengers must show tickets. / 乘客必须出示票据。'},
+      {word:'announce',meaning:'宣布；播报',phonetic:'/əˈnaʊns/',example:'The driver announced the stop. / 司机播报了站点。'},
+      {word:'exit',meaning:'出口；退出',phonetic:'/ˈeksɪt/',example:'Use exit B for the mall. / 去商场走B出口。'},
+      {word:'priority',meaning:'优先；重点',phonetic:'/praɪˈɒrəti/',example:'Give priority to the elderly. / 优先照顾老人。'},
+      {word:'meanwhile',meaning:'同时；其间',phonetic:'/ˈmiːnwaɪl/',example:'Meanwhile, I studied English. / 与此同时，我在学英语。'},
+      {word:'refresh',meaning:'刷新；恢复精神',phonetic:'/rɪˈfreʃ/',example:'Refresh your mind on the way. / 在途中让思维放松。'},
+      {word:'productive',meaning:'有效率的',phonetic:'/prəˈdʌktɪv/',example:'Make your commute productive. / 让通勤时间有效率。'},
+      {word:'vocabulary',meaning:'词汇量',phonetic:'/vəˈkæbjʊləri/',example:'Build your vocabulary daily. / 每天积累词汇量。'},
+      {word:'persist',meaning:'坚持',phonetic:'/pəˈsɪst/',example:'Persist and you will succeed. / 坚持就会成功。'},
+      {word:'memorize',meaning:'记住；背诵',phonetic:'/ˈmeməraɪz/',example:'Memorize five words daily. / 每天背五个单词。'},
+      {word:'review',meaning:'复习；回顾',phonetic:'/rɪˈvjuː/',example:'Review what you learned. / 复习你学到的内容。'},
+      {word:'progress',meaning:'进步；进展',phonetic:'/ˈprəʊɡres/',example:'Track your progress. / 跟踪你的进步。'},
+      {word:'consistent',meaning:'持续的；一致的',phonetic:'/kənˈsɪstənt/',example:'Be consistent in learning. / 学习要持之以恒。'},
+      {word:'habit',meaning:'习惯',phonetic:'/ˈhæbɪt/',example:'Form a good study habit. / 养成好的学习习惯。'},
+      {word:'focus',meaning:'专注；集中',phonetic:'/ˈfoʊkəs/',example:'Focus on one thing at a time. / 一次专注一件事。'},
+      {word:'achieve',meaning:'实现；达成',phonetic:'/əˈtʃiːv/',example:'You can achieve your goals. / 你能实现你的目标。'},
+      {word:'improve',meaning:'改善；提高',phonetic:'/ɪmˈpruːv/',example:'Improve a little every day. / 每天进步一点点。'},
+    ]
+  },
+  office: {
+    name: '职场英语包', group: '职场英语',
+    words: [
+      {word:'colleague',meaning:'同事',phonetic:'/ˈkɒliːɡ/',example:'My colleague is very helpful. / 我的同事很乐于助人。'},
+      {word:'deadline',meaning:'截止日期',phonetic:'/ˈdedlaɪn/',example:'The deadline is Friday. / 截止日期是周五。'},
+      {word:'presentation',meaning:'演示；报告',phonetic:'/ˌpreznˈteɪʃn/',example:'Give a presentation to the team. / 向团队做报告。'},
+      {word:'negotiate',meaning:'谈判；协商',phonetic:'/nɪˈɡoʊʃieɪt/',example:'Negotiate a better deal. / 谈判争取更好的条件。'},
+      {word:'collaborate',meaning:'合作',phonetic:'/kəˈlæbəreɪt/',example:'Collaborate with your team. / 与团队合作。'},
+      {word:'delegate',meaning:'委派；代表',phonetic:'/ˈdelɪɡeɪt/',example:'Delegate tasks to others. / 把任务委派给他人。'},
+      {word:'feedback',meaning:'反馈',phonetic:'/ˈfiːdbæk/',example:'Give constructive feedback. / 给出建设性反馈。'},
+      {word:'agenda',meaning:'议程；日程',phonetic:'/əˈdʒendə/',example:'What is on the agenda? / 议程上有什么？'},
+      {word:'implement',meaning:'实施；执行',phonetic:'/ˈɪmplɪment/',example:'Implement the new strategy. / 执行新策略。'},
+      {word:'initiative',meaning:'主动性；倡议',phonetic:'/ɪˈnɪʃətɪv/',example:'Take the initiative. / 主动出击。'},
+      {word:'proposal',meaning:'提案；建议书',phonetic:'/prəˈpoʊzl/',example:'Submit a proposal. / 提交提案。'},
+      {word:'budget',meaning:'预算',phonetic:'/ˈbʌdʒɪt/',example:'Manage the budget carefully. / 谨慎管理预算。'},
+      {word:'revenue',meaning:'收入；营收',phonetic:'/ˈrevənjuː/',example:'Increase company revenue. / 增加公司营收。'},
+      {word:'strategy',meaning:'策略；战略',phonetic:'/ˈstrætədʒi/',example:'Develop a marketing strategy. / 制定营销策略。'},
+      {word:'efficient',meaning:'高效的',phonetic:'/ɪˈfɪʃnt/',example:'Be more efficient at work. / 工作更高效。'},
+      {word:'flexible',meaning:'灵活的',phonetic:'/ˈfleksɪbl/',example:'We need flexible solutions. / 我们需要灵活的解决方案。'},
+      {word:'milestone',meaning:'里程碑',phonetic:'/ˈmaɪlstəʊn/',example:'Reach an important milestone. / 达到重要里程碑。'},
+      {word:'stakeholder',meaning:'利益相关者',phonetic:'/ˈsteɪkhoʊldər/',example:'Meet with all stakeholders. / 与所有利益相关方会面。'},
+      {word:'benchmark',meaning:'基准；标杆',phonetic:'/ˈbentʃmɑːrk/',example:'Set a benchmark for quality. / 设定质量基准。'},
+      {word:'outcome',meaning:'结果；成果',phonetic:'/ˈaʊtkʌm/',example:'The outcome was positive. / 结果是积极的。'},
+      {word:'priority',meaning:'优先事项',phonetic:'/praɪˈɒrəti/',example:'Set clear priorities. / 设定明确的优先事项。'},
+      {word:'transparent',meaning:'透明的',phonetic:'/trænsˈpærənt/',example:'Be transparent with your team. / 对团队坦诚透明。'},
+      {word:'innovative',meaning:'创新的',phonetic:'/ˈɪnəveɪtɪv/',example:'We need innovative ideas. / 我们需要创新性想法。'},
+      {word:'sustainable',meaning:'可持续的',phonetic:'/səˈsteɪnəbl/',example:'Build a sustainable business. / 建立可持续的业务。'},
+      {word:'optimize',meaning:'优化',phonetic:'/ˈɒptɪmaɪz/',example:'Optimize the workflow. / 优化工作流程。'},
+      {word:'scalable',meaning:'可扩展的',phonetic:'/ˈskeɪləbl/',example:'Build a scalable system. / 构建可扩展的系统。'},
+      {word:'facilitate',meaning:'促进；使便利',phonetic:'/fəˈsɪlɪteɪt/',example:'Facilitate team communication. / 促进团队沟通。'},
+      {word:'leverage',meaning:'利用；杠杆',phonetic:'/ˈliːvərɪdʒ/',example:'Leverage your strengths. / 利用你的优势。'},
+      {word:'proactive',meaning:'积极主动的',phonetic:'/prəʊˈæktɪv/',example:'Be proactive, not reactive. / 要积极主动，而非被动应对。'},
+      {word:'accountable',meaning:'负责任的',phonetic:'/əˈkaʊntəbl/',example:'Be accountable for your work. / 对自己的工作负责。'},
+    ]
+  },
+  cet4: {
+    name: '四六级核心词', group: '四六级',
+    words: [
+      {word:'abundant',meaning:'丰富的；充裕的',phonetic:'/əˈbʌndənt/',example:'There is abundant food here. / 这里食物丰富。'},
+      {word:'acknowledge',meaning:'承认；致谢',phonetic:'/əkˈnɒlɪdʒ/',example:'Acknowledge your mistakes. / 承认你的错误。'},
+      {word:'adapt',meaning:'适应；改编',phonetic:'/əˈdæpt/',example:'Adapt to new environments. / 适应新环境。'},
+      {word:'allocate',meaning:'分配；拨出',phonetic:'/ˈæləkeɪt/',example:'Allocate resources wisely. / 合理分配资源。'},
+      {word:'ambiguous',meaning:'模糊的；含义不清的',phonetic:'/æmˈbɪɡjuəs/',example:'The instructions were ambiguous. / 说明含糊不清。'},
+      {word:'anticipate',meaning:'预期；期待',phonetic:'/ænˈtɪsɪpeɪt/',example:'We anticipate good results. / 我们预期好的结果。'},
+      {word:'assess',meaning:'评估；评定',phonetic:'/əˈses/',example:'Assess the situation carefully. / 仔细评估情况。'},
+      {word:'assume',meaning:'假设；承担',phonetic:'/əˈsjuːm/',example:'Do not assume the worst. / 不要做最坏的假设。'},
+      {word:'attitude',meaning:'态度；看法',phonetic:'/ˈætɪtjuːd/',example:'Have a positive attitude. / 保持积极的态度。'},
+      {word:'circumstance',meaning:'情况；境况',phonetic:'/ˈsɜːkəmstæns/',example:'Under any circumstance. / 在任何情况下。'},
+      {word:'comprehensive',meaning:'全面的；综合的',phonetic:'/ˌkɒmprɪˈhensɪv/',example:'A comprehensive review. / 全面的复习。'},
+      {word:'concentrate',meaning:'集中；专注',phonetic:'/ˈkɒnsntreɪt/',example:'Concentrate on your studies. / 专注于学习。'},
+      {word:'consequence',meaning:'后果；结果',phonetic:'/ˈkɒnsɪkwəns/',example:'Think of the consequences. / 考虑后果。'},
+      {word:'controversial',meaning:'有争议的',phonetic:'/ˌkɒntrəˈvɜːʃl/',example:'A controversial decision. / 一个有争议的决定。'},
+      {word:'convert',meaning:'转变；转换',phonetic:'/kənˈvɜːt/',example:'Convert energy into power. / 将能量转化为动力。'},
+      {word:'distinguish',meaning:'区分；辨别',phonetic:'/dɪˈstɪŋɡwɪʃ/',example:'Distinguish right from wrong. / 辨别是非。'},
+      {word:'diverse',meaning:'多样的；不同的',phonetic:'/daɪˈvɜːs/',example:'A diverse group of students. / 多元化的学生群体。'},
+      {word:'eliminate',meaning:'消除；淘汰',phonetic:'/ɪˈlɪmɪneɪt/',example:'Eliminate unnecessary steps. / 消除不必要的步骤。'},
+      {word:'emphasize',meaning:'强调；着重',phonetic:'/ˈemfəsaɪz/',example:'Emphasize key points. / 强调重点。'},
+      {word:'encounter',meaning:'遇到；遭遇',phonetic:'/ɪnˈkaʊntər/',example:'Encounter difficulties. / 遇到困难。'},
+      {word:'fundamental',meaning:'基本的；根本的',phonetic:'/ˌfʌndəˈmentl/',example:'Fundamental principles. / 基本原则。'},
+      {word:'generate',meaning:'产生；生成',phonetic:'/ˈdʒenəreɪt/',example:'Generate new ideas. / 产生新想法。'},
+      {word:'inevitable',meaning:'不可避免的',phonetic:'/ɪnˈevɪtəbl/',example:'Change is inevitable. / 变化是不可避免的。'},
+      {word:'interpret',meaning:'解释；口译',phonetic:'/ɪnˈtɜːprɪt/',example:'Interpret the data correctly. / 正确解读数据。'},
+      {word:'maintain',meaning:'维持；保持',phonetic:'/meɪnˈteɪn/',example:'Maintain a healthy lifestyle. / 保持健康的生活方式。'},
+      {word:'obtain',meaning:'获得；得到',phonetic:'/əbˈteɪn/',example:'Obtain necessary information. / 获取必要信息。'},
+      {word:'potential',meaning:'潜力；潜在的',phonetic:'/pəˈtenʃl/',example:'Realize your potential. / 发挥你的潜力。'},
+      {word:'restrict',meaning:'限制；约束',phonetic:'/rɪˈstrɪkt/',example:'Restrict access to the area. / 限制进入该区域。'},
+      {word:'significant',meaning:'重要的；显著的',phonetic:'/sɪɡˈnɪfɪkənt/',example:'A significant improvement. / 显著的进步。'},
+      {word:'transform',meaning:'转变；改变',phonetic:'/trænsˈfɔːm/',example:'Transform your life. / 改变你的生活。'},
+    ]
+  },
+  travel: {
+    name: '旅行出行包', group: '旅行英语',
+    words: [
+      {word:'passport',meaning:'护照',phonetic:'/ˈpɑːspɔːt/',example:'Show your passport please. / 请出示您的护照。'},
+      {word:'boarding',meaning:'登机；登船',phonetic:'/ˈbɔːrdɪŋ/',example:'Boarding starts at gate 5. / 登机在5号登机口开始。'},
+      {word:'customs',meaning:'海关；风俗',phonetic:'/ˈkʌstəmz/',example:'Declare items at customs. / 在海关申报物品。'},
+      {word:'itinerary',meaning:'行程；旅行计划',phonetic:'/aɪˈtɪnəreri/',example:'Plan your itinerary in advance. / 提前规划行程。'},
+      {word:'reservation',meaning:'预订；保留',phonetic:'/ˌrezəˈveɪʃn/',example:'Make a hotel reservation. / 预订酒店。'},
+      {word:'currency',meaning:'货币；通货',phonetic:'/ˈkɜːrənsi/',example:'Exchange currency at the bank. / 在银行兑换货币。'},
+      {word:'accommodation',meaning:'住宿；住所',phonetic:'/əˌkɒməˈdeɪʃn/',example:'Find comfortable accommodation. / 找到舒适的住宿。'},
+      {word:'departure',meaning:'出发；离开',phonetic:'/dɪˈpɑːrtʃər/',example:'Check the departure time. / 查看出发时间。'},
+      {word:'arrival',meaning:'到达；抵达',phonetic:'/əˈraɪvl/',example:'Expected arrival at 3pm. / 预计下午3点到达。'},
+      {word:'luggage',meaning:'行李',phonetic:'/ˈlʌɡɪdʒ/',example:'Claim your luggage here. / 在这里领取行李。'},
+      {word:'souvenir',meaning:'纪念品',phonetic:'/ˌsuːvəˈnɪr/',example:'Buy a souvenir for mom. / 给妈妈买个纪念品。'},
+      {word:'recommend',meaning:'推荐',phonetic:'/ˌrekəˈmend/',example:'Can you recommend a restaurant? / 你能推荐一家餐厅吗？'},
+      {word:'attraction',meaning:'景点；吸引力',phonetic:'/əˈtrækʃn/',example:'Visit the main attractions. / 参观主要景点。'},
+      {word:'authentic',meaning:'真实的；地道的',phonetic:'/ɔːˈθentɪk/',example:'Try authentic local food. / 尝试地道的当地食物。'},
+      {word:'navigate',meaning:'导航；找路',phonetic:'/ˈnævɪɡeɪt/',example:'Navigate using your phone. / 用手机导航。'},
+      {word:'translate',meaning:'翻译',phonetic:'/trænsˈleɪt/',example:'Translate the menu for me. / 帮我翻译菜单。'},
+      {word:'emergency',meaning:'紧急情况',phonetic:'/ɪˈmɜːrdʒənsi/',example:'Call in an emergency. / 紧急情况下打电话。'},
+      {word:'insurance',meaning:'保险',phonetic:'/ɪnˈʃʊərəns/',example:'Travel insurance is important. / 旅行保险很重要。'},
+      {word:'altitude',meaning:'海拔；高度',phonetic:'/ˈæltɪtjuːd/',example:'High altitude can cause sickness. / 高海拔可能导致高原反应。'},
+      {word:'scenic',meaning:'风景优美的',phonetic:'/ˈsiːnɪk/',example:'Take the scenic route. / 走风景优美的路线。'},
+      {word:'local',meaning:'当地的；本地人',phonetic:'/ˈloʊkl/',example:'Ask a local for directions. / 向当地人问路。'},
+      {word:'explore',meaning:'探索；游览',phonetic:'/ɪkˈsplɔːr/',example:'Explore the old town. / 探索古城。'},
+      {word:'experience',meaning:'体验；经历',phonetic:'/ɪkˈspɪəriəns/',example:'An unforgettable experience. / 难忘的体验。'},
+      {word:'adventure',meaning:'冒险；奇遇',phonetic:'/ədˈventʃər/',example:'Seek new adventures. / 寻求新的冒险。'},
+      {word:'destination',meaning:'目的地',phonetic:'/ˌdestɪˈneɪʃn/',example:'Our destination is Paris. / 我们的目的地是巴黎。'},
+      {word:'backpack',meaning:'背包；背包旅行',phonetic:'/ˈbækpæk/',example:'Pack light in your backpack. / 背包要轻装上阵。'},
+      {word:'hostel',meaning:'青年旅社',phonetic:'/ˈhɒstl/',example:'Stay at a cheap hostel. / 住便宜的青年旅社。'},
+      {word:'budget',meaning:'预算；节省',phonetic:'/ˈbʌdʒɪt/',example:'Travel on a tight budget. / 低预算旅行。'},
+      {word:'flexible',meaning:'灵活的',phonetic:'/ˈfleksɪbl/',example:'Keep your plans flexible. / 保持计划的灵活性。'},
+      {word:'memorable',meaning:'难忘的',phonetic:'/ˈmemərəbl/',example:'A memorable journey. / 难忘的旅程。'},
+    ]
+  }
+};
+
+let _onboardSelected = new Set();
+
+function toggleOnboardSet(id) {
+  if(_onboardSelected.has(id)) {
+    _onboardSelected.delete(id);
+    document.getElementById('os_' + id).classList.remove('selected');
+    document.getElementById('oc_' + id).textContent = '';
+  } else {
+    _onboardSelected.add(id);
+    document.getElementById('os_' + id).classList.add('selected');
+    document.getElementById('oc_' + id).textContent = '✓';
+  }
+}
+
+function confirmOnboard() {
+  if(_onboardSelected.size === 0) {
+    showToast('请先选择至少一个词库');
+    return;
+  }
+  const base = words.length ? Math.max(...words.map(w => w.id||0)) : 0;
+  let added = 0;
+  _onboardSelected.forEach(id => {
+    const pack = ONBOARD_PACKS[id];
+    if(!pack) return;
+    pack.words.forEach((w, i) => {
+      if(words.some(x => x.word.toLowerCase() === w.word.toLowerCase())) return;
+      words.push({ id: base + added + 1, word: w.word, meaning: w.meaning, phonetic: w.phonetic||'', example: w.example||'', group: pack.group });
+      added++;
+    });
+  });
+  saveWords();
+  sv('fw_onboarded', true);
+  document.getElementById('onboardOverlay').classList.add('hidden');
+  renderHome(); updateDots();
+  showToast('🎉 已导入 ' + added + ' 个单词，开始学习吧！');
+}
+
+function skipOnboard() {
+  sv('fw_onboarded', true);
+  document.getElementById('onboardOverlay').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════
+// 遗忘曲线可视化
+// ═══════════════════════════════════════════
+function renderCurve() {
+  const el = document.getElementById('curveBars');
+  if(!el) return;
+  const todayStr = today();
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowStr = tomorrow.toISOString().slice(0,10);
+  const in3 = new Date(); in3.setDate(in3.getDate()+3);
+  const in3Str = in3.toISOString().slice(0,10);
+  const in7 = new Date(); in7.setDate(in7.getDate()+7);
+  const in7Str = in7.toISOString().slice(0,10);
+
+  let bins = [
+    { label: '今天', color: '#ff5c6e', count: 0 },
+    { label: '明天', color: '#ffaa00', count: 0 },
+    { label: '3天内', color: '#6c63ff', count: 0 },
+    { label: '7天内', color: '#48c6ef', count: 0 },
+    { label: '7天+', color: '#11c987', count: 0 },
+    { label: '未学', color: '#c0c7d0', count: 0 },
+  ];
+
+  words.forEach(w => {
+    const d = getSm2(w.id);
+    if(!d.due) { bins[5].count++; return; }
+    if(d.due <= todayStr)    { bins[0].count++; }
+    else if(d.due <= tomorrowStr) { bins[1].count++; }
+    else if(d.due <= in3Str) { bins[2].count++; }
+    else if(d.due <= in7Str) { bins[3].count++; }
+    else                      { bins[4].count++; }
+  });
+
+  const max = Math.max(...bins.map(b=>b.count), 1);
+  el.innerHTML = bins.map(b => `
+    <div class="curve-bar-wrap">
+      <div class="curve-bar-count">${b.count}</div>
+      <div class="curve-bar" style="height:${Math.max(4, b.count/max*70)}px;background:${b.color}"></div>
+      <div class="curve-bar-label">${b.label}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// 打卡分享
+// ═══════════════════════════════════════════
+function openShare(wordsLearned) {
+  const overlay = document.getElementById('shareOverlay');
+  if(!overlay) return;
+  const slogans = [
+    '坚持就是胜利，今天的你超棒！',
+    '每天进步一点点，积累成大进步！',
+    '地铁时间没浪费，单词收入囊中！',
+    '不爱单词？学完就爱了！',
+    '今天的努力，明天的流利！'
+  ];
+  document.getElementById('shareNum').textContent = wordsLearned || qDeck.length;
+  document.getElementById('shareStreak').textContent = getStreak();
+  document.getElementById('shareTotal').textContent = words.length;
+  document.getElementById('shareXp').textContent = xpData.total;
+  document.getElementById('shareSlogan').textContent = slogans[Math.floor(Math.random()*slogans.length)];
+  overlay.classList.remove('hidden');
+}
+
+function closeShare() {
+  document.getElementById('shareOverlay').classList.add('hidden');
+}
+
+function copyShareText() {
+  const num = document.getElementById('shareNum').textContent;
+  const streak = document.getElementById('shareStreak').textContent;
+  const total = document.getElementById('shareTotal').textContent;
+  const slogan = document.getElementById('shareSlogan').textContent;
+  const text = `【不爱单词 · 今日打卡】\n今天学了 ${num} 个单词 📖\n已连续学习 ${streak} 天 🔥\n累计掌握 ${total} 个单词\n\n${slogan}\n\n✦ 不爱单词 — 碎片时间背单词`;
+  navigator.clipboard?.writeText(text).then(() => showToast('📋 已复制，快去分享吧！')).catch(() => showToast(text.slice(0,30)+'…'));
+}
+
 
 </script>
 
 <!-- ── AI 浮动按钮 ── -->
-<button class="ai-float-btn" id="aiFAB" onclick="toggleAI()">✨</button>
+<button class="ai-float-btn" id="aiFAB" onclick="toggleAI()">🐾</button>
 
 <!-- ── AI 面板 ── -->
 <div class="ai-overlay hidden" id="aiOverlay">
@@ -4294,7 +5107,7 @@ async function aiSend(prefill) {
     <div class="ai-panel-header">
       <div>
         <div class="ai-panel-title">✨ AI 单词助手</div>
-        <div class="ai-panel-sub">由 Claude 驱动</div>
+        <div class="ai-panel-sub">✨ 喵～有什么想学的？</div>
       </div>
       <div class="ai-header-btns">
         <button class="ai-close-btn" onclick="toggleAI()">✕</button>
@@ -4427,5 +5240,79 @@ async function aiSend(prefill) {
   </div>
 </div>
 
+
+<!-- ── 冷启动引导页 ── -->
+<div class="onboard-overlay hidden" id="onboardOverlay">
+  <div class="onboard-logo">✦</div>
+  <div class="onboard-title">欢迎来到不爱单词</div>
+  <div class="onboard-sub">选一个词库，马上开始学习<br>地铁上也能轻松背单词 🚇</div>
+  <div class="onboard-sets" id="onboardSets">
+    <div class="onboard-set" onclick="toggleOnboardSet('metro')" id="os_metro">
+      <div class="onboard-set-icon">🚇</div>
+      <div>
+        <div class="onboard-set-name">地铁通勤包</div>
+        <div class="onboard-set-desc">30个高频口语词，5分钟搞定</div>
+      </div>
+      <div class="onboard-check" id="oc_metro"></div>
+    </div>
+    <div class="onboard-set" onclick="toggleOnboardSet('office')" id="os_office">
+      <div class="onboard-set-icon">💼</div>
+      <div>
+        <div class="onboard-set-name">职场英语包</div>
+        <div class="onboard-set-desc">30个商务高频词，职场必备</div>
+      </div>
+      <div class="onboard-check" id="oc_office"></div>
+    </div>
+    <div class="onboard-set" onclick="toggleOnboardSet('cet4')" id="os_cet4">
+      <div class="onboard-set-icon">🎓</div>
+      <div>
+        <div class="onboard-set-name">四六级核心词</div>
+        <div class="onboard-set-desc">30个考试必备高频词</div>
+      </div>
+      <div class="onboard-check" id="oc_cet4"></div>
+    </div>
+    <div class="onboard-set" onclick="toggleOnboardSet('travel')" id="os_travel">
+      <div class="onboard-set-icon">✈️</div>
+      <div>
+        <div class="onboard-set-name">旅行出行包</div>
+        <div class="onboard-set-desc">30个出行必备实用词</div>
+      </div>
+      <div class="onboard-check" id="oc_travel"></div>
+    </div>
+  </div>
+  <button class="onboard-btn" onclick="confirmOnboard()">开始学习 →</button>
+  <div class="onboard-skip" onclick="skipOnboard()">我想自己添加单词</div>
+</div>
+
+<!-- ── 打卡分享弹窗 ── -->
+<div class="share-overlay hidden" id="shareOverlay">
+  <div style="width:100%;max-width:380px">
+    <div class="share-card" id="shareCard">
+      <div class="share-card-logo">✦ 不爱单词</div>
+      <div class="share-card-num" id="shareNum">0</div>
+      <div class="share-card-label">今天背了这么多单词！</div>
+      <div class="share-card-stats">
+        <div>
+          <div class="share-card-stat-n" id="shareStreak">0</div>
+          <div class="share-card-stat-l">连续天</div>
+        </div>
+        <div>
+          <div class="share-card-stat-n" id="shareTotal">0</div>
+          <div class="share-card-stat-l">总单词</div>
+        </div>
+        <div>
+          <div class="share-card-stat-n" id="shareXp">0</div>
+          <div class="share-card-stat-l">总 XP</div>
+        </div>
+      </div>
+      <div class="share-card-slogan" id="shareSlogan">坚持就是胜利，今天的你超棒！</div>
+      <div class="share-card-qr">不爱单词 · 碎片时间背单词</div>
+    </div>
+    <div class="share-actions">
+      <button class="share-act-btn" onclick="closeShare()" style="background:rgba(255,255,255,.2);color:#fff">关闭</button>
+      <button class="share-act-btn" onclick="copyShareText()" style="background:#fff;color:#6c63ff">📋 复制文字</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
